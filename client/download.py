@@ -28,7 +28,7 @@ def parse_args():
 
 
 def print_help():
-    print('usage: download[- h][- v | -q][- H ADDR] [- p PORT][- d FILEPATH] [- n FILENAME]\n')
+    print('usage: download[- h][-v | -q][-H ADDR] [-p PORT][-d FILEPATH] [-n FILENAME]\n')
     print('< command description >\n')
     print('optional arguments:')
     print('     -h, --help      show this help message and exit')
