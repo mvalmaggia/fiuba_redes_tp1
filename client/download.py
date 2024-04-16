@@ -15,7 +15,7 @@ DEFAULT_PORT = 8000
 # -p:      Puerto del servidor
 # -d:      Directorio a guardar el archivo bajado
 # -n:      Nombre del archivo a bajar
-# NOTA: SON TODAS OPCIONALES ESTAS OPCIONES
+# NOTA: SON TODAS ESTAS OPCIONES NO SON OBLIGATORIAS
 def main():
     global verbose
     server_host = DEFAULT_HOST
@@ -47,6 +47,7 @@ def main():
 def parse_args():
     # [-h, -v|-q, -H, -p, -d, -n]
     options = [False, True, False, False, False, False]
+    # [ADDR, PORT, FILEPATH, FILENAME]
     args = ['', '', '', '']
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == '-h' or sys.argv[i] == '--help':
@@ -80,6 +81,18 @@ def print_help():
     print('     -p, --port      server port')
     print('     -d, --dst       destination file path')
     print('     -n, --name      file name')
+
+
+def retrans_go_back_n():
+    pass
+
+
+def retrans_stop_n_wait():
+    pass
+
+
+def divide_packet():
+    pass
 
 
 main()
