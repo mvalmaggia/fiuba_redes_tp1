@@ -3,6 +3,9 @@ import sys
 # Por defecto
 verbose = True
 
+DEFAULT_HOST = '127.0.0.1'
+DEFAULT_PORT = 8000
+
 
 # Formato linea de comando:
 # download [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]
@@ -15,35 +18,55 @@ verbose = True
 # NOTA: SON TODAS OPCIONALES ESTAS OPCIONES
 def main():
     global verbose
-    print('[DEBUG] verbose = ', verbose)
-    args = parse_args()
+    server_host = DEFAULT_HOST
+    server_port = DEFAULT_PORT
+    file_path = ''
+    file_name = ''
+    [options, args] = parse_args()
     print('[DEBUG] args = ', args)
-    if args[0]:
+    print('[DEBUG] options = ', options)
+
+    if options[0]:
         print_help()
         exit()
-    elif not args[1]:
+    elif not options[1]:
         verbose = False
-        print('[DEBUG] verbose = ', verbose)
+    elif options[2]:
+        server_host = args[0]
+    elif options[3]:
+        server_port = args[1]
+    elif options[4]:
+        file_path = args[2]
+    elif options[5]:
+        file_name = args[3]
 
 
+# Devuelve 2 listas:
+# options: opciones de funcionamiento del programa (ej: -p)
+# args: argumentos pasados por consola (ej: 8080)
 def parse_args():
     # [-h, -v|-q, -H, -p, -d, -n]
-    args = [False, True, False, False, False, False]
+    options = [False, True, False, False, False, False]
+    args = ['', '', '', '']
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == '-h' or sys.argv[i] == '--help':
-            args[0] = True
+            options[0] = True
         elif sys.argv[i] == '-q' or sys.argv[i] == '--quiet':
-            args[1] = False
+            options[1] = False
         elif sys.argv[i] == '-H' or sys.argv[i] == '--host':
-            args[2] = True
+            options[2] = True
+            args[0] = sys.argv[i + 1]
         elif sys.argv[i] == '-p' or sys.argv[i] == '--port':
-            args[3] = True
+            options[3] = True
+            args[1] = sys.argv[i + 1]
         elif sys.argv[i] == '-d' or sys.argv[i] == '--dst':
-            args[4] = True
+            options[4] = True
+            args[2] = sys.argv[i + 1]
         elif sys.argv[i] == '-n' or sys.argv[i] == '--name':
-            args[5] = True
+            options[5] = True
+            args[3] = sys.argv[i + 1]
 
-    return args
+    return [options, args]
 
 
 def print_help():
