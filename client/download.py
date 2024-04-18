@@ -1,10 +1,12 @@
 import sys
+from socket import *
 
 # Por defecto
 verbose = True
 
 DEFAULT_HOST = '127.0.0.1'
 DEFAULT_PORT = 8000
+MAX_PACKET_SIZE = 1400 # MSS <= 1460
 
 
 # Formato linea de comando:
@@ -34,11 +36,13 @@ def main():
     elif options[2]:
         server_host = args[0]
     elif options[3]:
-        server_port = args[1]
+        server_port = int(args[1])
     elif options[4]:
         file_path = args[2]
     elif options[5]:
         file_name = args[3]
+
+    rcv_file(server_host, server_port)
 
 
 # Devuelve 2 listas:
@@ -91,7 +95,32 @@ def retrans_stop_n_wait():
     pass
 
 
-def divide_packet():
+def rcv_file(server_host: str, server_port: int):
+    client_socket = socket(AF_INET, SOCK_DGRAM)
+    client_socket.bind((server_host, server_port))
+    packets = []
+
+    while True:
+        encoded_packet, server_address = client_socket.recvfrom(MAX_PACKET_SIZE)
+        decoded_packet = encoded_packet.decode()
+
+        # TODO: salir del bucle cuando se encuentra el flag FIN
+        if decoded_packet is None:
+            break
+
+        # TODO: revisar con checksum que el paquete esta intacto
+        packets.append(decoded_packet)
+        # client_socket.sendto('ack', server_address)
+
+    client_socket.close()
+    rebuild_file(packets)
+
+
+def rebuild_file(packets: []):
+    pass
+
+
+def send_ack():
     pass
 
 
