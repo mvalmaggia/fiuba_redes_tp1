@@ -1,4 +1,6 @@
 import argparse
+from upload import upload
+
 # usage: upload [-h] [-v | -q] [-H ADDR] [-p PORT] [-s FILEPATH] [-n FILENAME]
 # usage: download [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]
 def main():
@@ -18,7 +20,7 @@ def main():
     args = parser.parse_args()
     if args.command == "upload":
         print('executing upload')
-        # upload(args.host, args.port, args.file_path, args.file_name)
+        upload(args.host, args.port, args.file_path, args.file_name)
     elif args.command == "download":
         print('executing download')
         # download(args.host, args.port, args.file_path, args.file_name)

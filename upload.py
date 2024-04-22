@@ -5,13 +5,13 @@ UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
 
-def read_file_content(file_path):
+def read_file_content(file_path) -> str:
     try:
         with open(file_path, "r") as file:
             file_contents = file.read()
     except FileNotFoundError:
-        print("File not found or path is incorrect.")
-
+        print(f"File {file_path} not found")
+        exit(1)
     return file_contents
 
 def send_file(file_path, file_name, socket, udp_ip, udp_port):
