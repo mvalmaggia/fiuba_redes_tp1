@@ -47,7 +47,7 @@ DATA:
 * Datos
 
 FIN_UPLOAD:
-* Nombre_archivo
+* Nombre_archivo~~~~
 * Sec number
 
 # Preguntas:
