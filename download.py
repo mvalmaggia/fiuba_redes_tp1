@@ -1,6 +1,7 @@
+import pickle
 import sys
 from socket import *
-from lib import packet
+from lib.packet import Packet
 
 # Por defecto
 verbose = True
@@ -98,15 +99,22 @@ def retrans_stop_n_wait():
 
 def rcv_file(server_host: str, server_port: int):
     client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind((server_host, server_port))
+    client_socket.bind((server_host, server_port + 1)) # para prueba localhost
     packets = []
+
+    # Creo paquete de consulta para bajar archivos
+    query_packet = Packet(1, True, True)
+    # Uso el modulo 'pickle' para poder guardar el paquete en bytes y asi poder mandarlo
+    buffer = pickle.dumps(query_packet)
+    client_socket.sendto(buffer, (server_host, server_port))
 
     while True:
         encoded_packet, server_address = client_socket.recvfrom(MAX_PACKET_SIZE)
-        decoded_packet = encoded_packet.decode()
+        decoded_packet = pickle.loads(encoded_packet)
 
         # TODO: salir del bucle cuando se encuentra el flag FIN
-        if decoded_packet is None:
+        if decoded_packet.get_fin() :
+            print('[INFO] Conexion finalizada lado cliente')
             break
 
         # TODO: revisar con checksum que el paquete esta intacto

@@ -7,10 +7,14 @@ class Packet:
     seq_num: int
     checksum: int
     ack: int
+    fin: bool
+    is_query: bool
     data: str
 
-    def __init__(self, seq_num):
+    def __init__(self, seq_num, end_conection, request_download):
         self.seq_num = seq_num
+        self.fin = end_conection
+        self.is_query = request_download
         self.data = ''
 
     def acknowledge(self, prev_pack_seq_num: int):
@@ -35,3 +39,9 @@ class Packet:
 
     def get_ack(self):
         return self.ack
+
+    def get_fin(self):
+        return self.fin
+
+    def get_is_query(self):
+        return self.is_query

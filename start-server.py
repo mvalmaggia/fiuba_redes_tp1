@@ -1,4 +1,7 @@
+import pickle
 import sys
+from socket import *
+from lib.packet import Packet
 
 # Por defecto
 verbose = True
@@ -14,7 +17,7 @@ DEFAULT_PORT = 8000
 # -H:      Direccion IP del servidor
 # -p:      Puerto del servidor
 # -s:      Directorio encargado de guardar archivos
-# NOTA: SON TODAS ESTAS OPCIONES NO SON OBLIGATORIAS
+# NOTA: TODAS ESTAS OPCIONES NO SON OBLIGATORIAS
 
 def main():
     global verbose
@@ -36,6 +39,8 @@ def main():
         server_port = int(args[1])
     elif options[4]:
         dir_path = args[2]
+
+    listen(server_host, server_port)
 
 
 # Devuelve 2 listas:
@@ -75,5 +80,31 @@ def print_help():
     print('     -p, --port      server port')
     print('     -s, --storage   storage dir path')
 
+
+def listen(host_address: str, port: int):
+    server_socket = socket(AF_INET, SOCK_DGRAM)
+    server_socket.bind((host_address, port))
+    print('[INFO] Server listo para recibir consultas')
+
+    # paquete de prueba
+    pkt = Packet(1, True, False)
+
+    while True:
+        # TODO: cada conexion hecha se debe guardar en un hilo
+        packet, client_address = server_socket.recvfrom(1024)
+        decoded_packet = pickle.loads(packet)
+
+        # TODO: el servidor puede recibir 2 tipos paquetes -> uno con data para el
+        #       upload y otro de consulta para hacer un download
+
+        print('[INFO] Conexion con ', client_address)
+
+        if decoded_packet.get_fin():
+            print('[INFO] Conexion finalizada lado server')
+            buff = pickle.dumps(pkt)
+            server_socket.sendto(buff, client_address)
+            break
+
+    server_socket.close()
 
 main()
