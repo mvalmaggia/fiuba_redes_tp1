@@ -8,7 +8,7 @@ class Packet:
     checksum: int
     ack: int
     fin: bool
-    is_query: bool
+    is_download_query: bool
     data: str
 
     def __init__(self, seq_num, end_conection, request_download):
