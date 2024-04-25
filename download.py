@@ -103,7 +103,7 @@ def rcv_file(server_host: str, server_port: int):
     packets = []
 
     # Creo paquete de consulta para bajar archivos
-    query_packet = Packet(1, True, True)
+    query_packet = Packet(1, False, True)
     # Uso el modulo 'pickle' para poder guardar el paquete en bytes y asi poder mandarlo
     buffer = pickle.dumps(query_packet)
     client_socket.sendto(buffer, (server_host, server_port))
@@ -112,7 +112,10 @@ def rcv_file(server_host: str, server_port: int):
         encoded_packet, server_address = client_socket.recvfrom(MAX_PACKET_SIZE)
         decoded_packet = pickle.loads(encoded_packet)
 
-        # TODO: salir del bucle cuando se encuentra el flag FIN
+        print('[INFO] Paquete recibido: ')
+        print('[INFO]   seq_num: ', decoded_packet.get_seq_num())
+        print('[INFO]   fin: ', decoded_packet.get_fin())
+
         if decoded_packet.get_fin() :
             print('[INFO] Conexion finalizada lado cliente')
             break
@@ -120,6 +123,11 @@ def rcv_file(server_host: str, server_port: int):
         # TODO: revisar con checksum que el paquete esta intacto
         packets.append(decoded_packet)
         # client_socket.sendto('ack', server_address)
+
+        # TODO: una vez conseguido el paquete completo -> terminar comunicacion
+        fin_pkt = Packet(2, True, False)
+        buffer = pickle.dumps(fin_pkt)
+        client_socket.sendto(buffer, (server_host, server_port))
 
     client_socket.close()
     rebuild_file(packets)

@@ -87,24 +87,45 @@ def listen(host_address: str, port: int):
     print('[INFO] Server listo para recibir consultas')
 
     # paquete de prueba
-    pkt = Packet(1, True, False)
+    end_pkt = Packet(1, True, False)
 
     while True:
         # TODO: cada conexion hecha se debe guardar en un hilo
         packet, client_address = server_socket.recvfrom(1024)
         decoded_packet = pickle.loads(packet)
 
+        if decoded_packet.get_fin():
+            print('[INFO] Conexion finalizada lado server')
+            buff = pickle.dumps(end_pkt)
+            server_socket.sendto(buff, client_address)
+            break
+
         # TODO: el servidor puede recibir 2 tipos paquetes -> uno con data para el
         #       upload y otro de consulta para hacer un download
 
         print('[INFO] Conexion con ', client_address)
 
-        if decoded_packet.get_fin():
-            print('[INFO] Conexion finalizada lado server')
-            buff = pickle.dumps(pkt)
-            server_socket.sendto(buff, client_address)
-            break
+        if decoded_packet.is_download_query():
+            send_file(server_socket, client_address)
+
+            # TODO: aca trabajar el tema de upload
+        elif not decoded_packet.is_download_query():
+            upload_file()
 
     server_socket.close()
+
+
+def send_file(server_socket, client_address):
+    print('[INFO] Descargando archivo...')
+    ack = Packet(2, False, False)
+    ack.acknowledge(1)
+    buf = pickle.dumps(ack)
+    server_socket.sendto(buf, client_address)
+
+
+
+def upload_file():
+    pass
+
 
 main()

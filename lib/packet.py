@@ -14,7 +14,7 @@ class Packet:
     def __init__(self, seq_num, end_conection, request_download):
         self.seq_num = seq_num
         self.fin = end_conection
-        self.is_query = request_download
+        self.is_download_query = request_download
         self.data = ''
 
     def acknowledge(self, prev_pack_seq_num: int):
@@ -43,5 +43,5 @@ class Packet:
     def get_fin(self):
         return self.fin
 
-    def get_is_query(self):
-        return self.is_query
+    def is_download_query(self):
+        return self.is_download_query()
