@@ -14,6 +14,7 @@ class Packet:
     def __init__(self, seq_num, end_conection, request_download):
         self.seq_num = seq_num
         self.fin = end_conection
+        self.ack = 0
         self.is_download_query = request_download
         self.data = ''
 
@@ -43,5 +44,5 @@ class Packet:
     def get_fin(self):
         return self.fin
 
-    def is_download_query(self):
-        return self.is_download_query()
+    def get_is_download_query(self):
+        return self.is_download_query

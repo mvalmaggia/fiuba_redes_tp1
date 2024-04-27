@@ -85,9 +85,7 @@ def listen(host_address: str, port: int):
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((host_address, port))
     print('[INFO] Server listo para recibir consultas')
-
-    # paquete de prueba
-    end_pkt = Packet(1, True, False)
+    seq_num = 1
 
     while True:
         # TODO: cada conexion hecha se debe guardar en un hilo
@@ -96,8 +94,6 @@ def listen(host_address: str, port: int):
 
         if decoded_packet.get_fin():
             print('[INFO] Conexion finalizada lado server')
-            buff = pickle.dumps(end_pkt)
-            server_socket.sendto(buff, client_address)
             break
 
         # TODO: el servidor puede recibir 2 tipos paquetes -> uno con data para el
@@ -105,23 +101,43 @@ def listen(host_address: str, port: int):
 
         print('[INFO] Conexion con ', client_address)
 
-        if decoded_packet.is_download_query():
-            send_file(server_socket, client_address)
+        if decoded_packet.get_is_download_query():
+            seq_num = send_file(server_socket, client_address, decoded_packet)
+            end_pkt = Packet(seq_num + 1, True, False)
+            buff = pickle.dumps(end_pkt)
+            server_socket.sendto(buff, client_address)
 
             # TODO: aca trabajar el tema de upload
-        elif not decoded_packet.is_download_query():
+        elif not decoded_packet.get_is_download_query():
             upload_file()
 
     server_socket.close()
 
 
-def send_file(server_socket, client_address):
+# devuelve el sequence number con el que termino de mandar el archivo
+def send_file(server_socket, client_address, client_pkt: Packet):
     print('[INFO] Descargando archivo...')
-    ack = Packet(2, False, False)
-    ack.acknowledge(1)
+    seq_num = 1
+
+    # mando ack
+    ack = Packet(seq_num, False, False)
     buf = pickle.dumps(ack)
     server_socket.sendto(buf, client_address)
 
+    # mando archivo (hardcodeado a 'files')
+    # TODO: 'directory' deberia ser el que se manda por argumento en consola o el por defecto
+    directory = '/home/ramaxx95/Desktop/Facultad/Intro a distribuidos/TP1/fiuba_redes_tp1/files/'
+    print('[DEBUG] dir = ', directory + client_pkt.get_data())
+    file = open(directory + client_pkt.get_data(), 'r')
+    data = file.read()
+    file.close()
+    dwnl_pkt = Packet(seq_num + 1, False, False)
+    dwnl_pkt.insert_data(data)
+    dwnl_pkt.acknowledge(client_pkt.get_seq_num())
+    buf = pickle.dumps(dwnl_pkt)
+    server_socket.sendto(buf, client_address)
+
+    return seq_num
 
 
 def upload_file():
