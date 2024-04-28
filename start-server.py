@@ -2,6 +2,7 @@ import pickle
 import sys
 from socket import *
 from lib.packet import Packet
+import os
 
 # Por defecto
 verbose = True
@@ -23,7 +24,7 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    dir_path = ''
+    dir_path = os.path.dirname(__file__) + '/files/'
     [options, args] = parse_args()
     print('[DEBUG] args = ', args)
     print('[DEBUG] options = ', options)
@@ -40,7 +41,7 @@ def main():
     elif options[4]:
         dir_path = args[2]
 
-    listen(server_host, server_port)
+    listen(server_host, server_port, dir_path)
 
 
 # Devuelve 2 listas:
@@ -81,7 +82,7 @@ def print_help():
     print('     -s, --storage   storage dir path')
 
 
-def listen(host_address: str, port: int):
+def listen(host_address: str, port: int, dir_path: str):
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((host_address, port))
     print('[INFO] Server listo para recibir consultas')
@@ -102,7 +103,7 @@ def listen(host_address: str, port: int):
         print('[INFO] Conexion con ', client_address)
 
         if decoded_packet.get_is_download_query():
-            seq_num = send_file(server_socket, client_address, decoded_packet)
+            seq_num = send_file(server_socket, client_address, decoded_packet, dir_path)
             end_pkt = Packet(seq_num + 1, True, False)
             buff = pickle.dumps(end_pkt)
             server_socket.sendto(buff, client_address)
@@ -115,7 +116,7 @@ def listen(host_address: str, port: int):
 
 
 # devuelve el sequence number con el que termino de mandar el archivo
-def send_file(server_socket, client_address, client_pkt: Packet):
+def send_file(server_socket, client_address, client_pkt: Packet, dir_path: str):
     print('[INFO] Descargando archivo...')
     seq_num = 1
 
@@ -126,9 +127,8 @@ def send_file(server_socket, client_address, client_pkt: Packet):
 
     # mando archivo (hardcodeado a 'files')
     # TODO: 'directory' deberia ser el que se manda por argumento en consola o el por defecto
-    directory = '/home/ramaxx95/Desktop/Facultad/Intro a distribuidos/TP1/fiuba_redes_tp1/files/'
-    print('[DEBUG] dir = ', directory + client_pkt.get_data())
-    file = open(directory + client_pkt.get_data(), 'r')
+    print('[DEBUG] dir = ', dir_path + client_pkt.get_data())
+    file = open(dir_path + client_pkt.get_data(), 'r')
     data = file.read()
     file.close()
     dwnl_pkt = Packet(seq_num + 1, False, False)
