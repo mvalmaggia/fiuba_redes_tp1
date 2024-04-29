@@ -1,21 +1,24 @@
-# import random
+from enum import Enum
 
 MAX_DATA_SIZE = 1400
 
+class QueryType(Enum):
+    UPLOAD = "UPLOAD"
+    DOWNLOAD = "DOWNLOAD"
 
 class Packet:
     seq_num: int
     checksum: int
     ack: int
     fin: bool
-    is_download_query: bool
+    query_type: QueryType
     data: str
 
-    def __init__(self, seq_num, end_conection, request_download):
+    def __init__(self, seq_num, end_conection, query_type=None):
         self.seq_num = seq_num
         self.fin = end_conection
         self.ack = 0
-        self.is_download_query = request_download
+        self.query_type = query_type
         self.data = ''
 
     def acknowledge(self, prev_pack_seq_num: int):
@@ -45,4 +48,7 @@ class Packet:
         return self.fin
 
     def get_is_download_query(self):
-        return self.is_download_query
+        return (self.query_type == QueryType.DOWNLOAD)
+    
+    def get_is_upload_query(self):
+        return (self.query_type == QueryType.UPLOAD)

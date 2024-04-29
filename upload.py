@@ -13,7 +13,7 @@ def send_file(file_path, file_name, socket, udp_ip, udp_port):
             file_content = file.read(PACKET_SIZE)
             while file_content:
                 # modificar sec_number aca
-                data_packet = Packet(0, False, False)
+                data_packet = Packet(0, False)
                 data_packet.insert_data(file_content)
                 socket.sendto(pickle.dumps(data_packet), (udp_ip, udp_port))
                 file_content = file.read(PACKET_SIZE)
@@ -25,7 +25,7 @@ def upload(udp_ip, udp_port, file_path, file_name):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     # generate query to send to server
-    upload_query_packet = Packet(0, False, True, QueryType.UPLOAD)
+    upload_query_packet = Packet(0, False, QueryType.UPLOAD)
 
     serialised_packet = pickle.dumps(upload_query_packet)
 
@@ -33,7 +33,7 @@ def upload(udp_ip, udp_port, file_path, file_name):
 
     send_file(file_path, file_name, sock, udp_ip, udp_port)
 
-    upload_done_packet = Packet(0, True, False)
+    upload_done_packet = Packet(0, True)
 
     sock.sendto(pickle.dumps(upload_done_packet), (udp_ip, udp_port))
 

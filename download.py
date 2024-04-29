@@ -1,7 +1,7 @@
 import pickle
 import sys
 from socket import *
-from lib.packet import Packet
+from lib.packet import Packet, QueryType
 
 # Por defecto
 verbose = True
@@ -107,7 +107,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     print('[DEBUG] file_name = ', file_name)
 
     # Creo paquete de consulta para bajar archivos
-    query_packet = Packet(seq_num, False, True)
+    query_packet = Packet(seq_num, False, QueryType.DOWNLOAD)
     # Uso el modulo 'pickle' para poder guardar el paquete en bytes y asi poder mandarlo
     query_packet.insert_data(file_name)
     buffer = pickle.dumps(query_packet)
@@ -132,7 +132,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
         # client_socket.sendto('ack', server_address)
 
     # TODO: una vez conseguido el paquete completo -> terminar comunicacion
-    fin_pkt = Packet(seq_num + 1, True, False)
+    fin_pkt = Packet(seq_num + 1, True)
     buffer = pickle.dumps(fin_pkt)
     client_socket.sendto(buffer, (server_host, server_port))
 
