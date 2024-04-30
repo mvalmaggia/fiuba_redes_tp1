@@ -24,7 +24,7 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    dir_path = os.path.dirname(__file__) + '/files/'
+    dir_path = os.path.dirname(__file__) + '/files'
     [options, args] = parse_args()
     print('[DEBUG] args = ', args)
     print('[DEBUG] options = ', options)
@@ -104,12 +104,12 @@ def listen(host_address: str, port: int, dir_path):
 
         if decoded_packet.get_is_download_query():
             seq_num = send_file(server_socket, client_address, decoded_packet, dir_path)
-            end_pkt = Packet(seq_num + 1, True, False)
+            end_pkt = Packet(seq_num + 1, True)
             buff = pickle.dumps(end_pkt)
             server_socket.sendto(buff, client_address)
 
             # TODO: aca trabajar el tema de upload
-        elif not decoded_packet.get_is_download_query():
+        elif decoded_packet.get_is_upload_query():
             upload_file()
 
     server_socket.close()
@@ -121,17 +121,15 @@ def send_file(server_socket, client_address, client_pkt: Packet, dir_path):
     seq_num = 1
 
     # mando ack
-    ack = Packet(seq_num, False, False)
+    ack = Packet(seq_num, False)
     buf = pickle.dumps(ack)
     server_socket.sendto(buf, client_address)
 
-    # mando archivo (hardcodeado a 'files')
-    # TODO: 'directory' deberia ser el que se manda por argumento en consola o el por defecto
-    print('[DEBUG] dir = ', dir_path + client_pkt.get_data())
-    file = open(dir_path + client_pkt.get_data(), 'r')
+    print('[DEBUG] dir = ', dir_path + '/' + client_pkt.get_data())
+    file = open(dir_path + '/' + client_pkt.get_data(), 'r')
     data = file.read()
     file.close()
-    dwnl_pkt = Packet(seq_num + 1, False, False)
+    dwnl_pkt = Packet(seq_num + 1, False)
     dwnl_pkt.insert_data(data)
     dwnl_pkt.acknowledge(client_pkt.get_seq_num())
     buf = pickle.dumps(dwnl_pkt)

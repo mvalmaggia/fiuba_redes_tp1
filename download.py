@@ -142,7 +142,8 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
 
 def rebuild_file(packets: [], file_path: str, file_name: str):
     print('[INFO] Paquete recibido: ', packets[0].get_data())
-    dwld_file = open(file_path + file_name, 'w')
+    # TODO: faltaria ordenar los paquetes segun su sequence number
+    dwld_file = open(file_path + '/' + file_name, 'w')
     for file_pkt in packets:
         dwld_file.write(file_pkt.get_data())
     dwld_file.close()
