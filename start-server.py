@@ -36,7 +36,7 @@ def main():
     group.add_argument("-q", "--quiet",
                        help="decrease output verbosity", action="store_true")
 
-    # Especificaciones de conexion/bajada de archivo
+    # Especificaciones de conexion/guardado de archivo
     parser.add_argument("-H", "--host", help="service IP address", required=False, type=str)
     parser.add_argument("-p", "--port", help="service port number", required=False, type=int)
     parser.add_argument("-s", "--storage", help="storage dir path",
@@ -73,6 +73,7 @@ def listen(host_address: str, port: int, dir_path):
         if decoded_packet.get_fin():
             clients_pending_upload.discard(client_address)
             print('[INFO] Conexion finalizada lado server')
+            break
 
         thread = threading.Thread(target=handle_message, args=(decoded_packet, client_address, server_socket, dir_path, clients_pending_upload))
         thread.start()
@@ -142,10 +143,13 @@ def receive_file(packet, client_address, server_socket, dir_path):
 
     send_ack(client_address, server_socket, packet.get_seq_num())
 
+
 def send_ack(client_address, server_socket, seq_num):
     ack_packet = Packet(0, False)
     ack_packet.acknowledge(seq_num)
     buf = pickle.dumps(ack_packet)
     server_socket.sendto(buf, client_address)
 
-main()
+
+if __name__ == "__main__":
+    main()

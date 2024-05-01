@@ -123,4 +123,5 @@ def send_ack():
     pass
 
 
-main()
+if __name__ == "__main__":
+    main()

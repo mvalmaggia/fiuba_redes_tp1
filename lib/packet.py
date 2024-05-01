@@ -2,9 +2,11 @@ from enum import Enum
 
 MAX_DATA_SIZE = 1400
 
+
 class QueryType(Enum):
     UPLOAD = "UPLOAD"
     DOWNLOAD = "DOWNLOAD"
+
 
 class Packet:
     seq_num: int
@@ -21,7 +23,6 @@ class Packet:
         self.query_type = query_type
         self.file_name = file_name
         self.data = ''
-    
 
     def acknowledge(self, prev_pack_seq_num: int):
         self.ack = prev_pack_seq_num + 1
@@ -50,10 +51,10 @@ class Packet:
         return self.fin
 
     def get_is_download_query(self):
-        return (self.query_type == QueryType.DOWNLOAD)
+        return self.query_type == QueryType.DOWNLOAD
     
     def get_is_upload_query(self):
-        return (self.query_type == QueryType.UPLOAD)
+        return self.query_type == QueryType.UPLOAD
     
     def get_file_name(self):
         return self.file_name
