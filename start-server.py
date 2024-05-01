@@ -1,6 +1,7 @@
 import pickle
 import sys
 import threading
+import argparse
 from socket import *
 from lib.packet import Packet
 import os
@@ -19,68 +20,42 @@ DEFAULT_PORT = 8000
 # -H:      Direccion IP del servidor
 # -p:      Puerto del servidor
 # -s:      Directorio encargado de guardar archivos
-# NOTA: TODAS ESTAS OPCIONES NO SON OBLIGATORIAS
 
 def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
     dir_path = os.path.dirname(__file__) + '/files'
-    [options, args] = parse_args()
-    print('[DEBUG] args = ', args)
-    print('[DEBUG] options = ', options)
 
-    if options[0]:
-        print_help()
-        exit()
-    elif not options[1]:
+    parser = argparse.ArgumentParser(description="Server capable of uploading/downloading files")
+
+    # Se elige uno para la verbosidad de los mensajes por consola
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-v", "--verbose", help="increase output verbosity",
+                       action="store_true")
+    group.add_argument("-q", "--quiet",
+                       help="decrease output verbosity", action="store_true")
+
+    # Especificaciones de conexion/bajada de archivo
+    parser.add_argument("-H", "--host", help="service IP address", required=False, type=str)
+    parser.add_argument("-p", "--port", help="service port number", required=False, type=int)
+    parser.add_argument("-s", "--storage", help="storage dir path",
+                        required=False, type=str)
+
+    args = parser.parse_args()
+
+    if args.quiet:
         verbose = False
-    elif options[2]:
-        server_host = args[0]
-    elif options[3]:
-        server_port = int(args[1])
-    elif options[4]:
-        dir_path = args[2]
+    if args.host is not None:
+        server_host = args.host
+    if args.port is not None:
+        server_port = args.port
+    if args.storage is not None:
+        dir_path = args.storage
+
+    print("[DEBUG] args= ", [verbose, server_host, server_port, dir_path])
 
     listen(server_host, server_port, dir_path)
-
-
-# Devuelve 2 listas:
-# options: opciones de funcionamiento del programa (ej: -p)
-# args: argumentos pasados por consola (ej: 8080)
-def parse_args():
-    # [-h, -v|-q, -H, -p, -s]
-    options = [False, True, False, False, False]
-    # [ADDR, PORT, DIRPATH]
-    args = ['', '', '']
-    for i in range(1, len(sys.argv)):
-        if sys.argv[i] == '-h' or sys.argv[i] == '--help':
-            options[0] = True
-        elif sys.argv[i] == '-q' or sys.argv[i] == '--quiet':
-            options[1] = False
-        elif sys.argv[i] == '-H' or sys.argv[i] == '--host':
-            options[2] = True
-            args[0] = sys.argv[i + 1]
-        elif sys.argv[i] == '-p' or sys.argv[i] == '--port':
-            options[3] = True
-            args[1] = sys.argv[i + 1]
-        elif sys.argv[i] == '-s' or sys.argv[i] == '--storage':
-            options[4] = True
-            args[2] = sys.argv[i + 1]
-
-    return [options, args]
-
-
-def print_help():
-    print('usage: download [- h] [-v | -q] [-H ADDR] [-p PORT] [-s DIRPATH]\n')
-    print('< command description >\n')
-    print('optional arguments:')
-    print('     -h, --help      show this help message and exit')
-    print('     -v, --verbose   increase output verbosity')
-    print('     -q, --quiet     decrease output verbosity')
-    print('     -H, --host      server IP address')
-    print('     -p, --port      server port')
-    print('     -s, --storage   storage dir path')
 
 
 def listen(host_address: str, port: int, dir_path):
