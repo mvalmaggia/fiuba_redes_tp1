@@ -128,6 +128,7 @@ def handle_message(packet, client_address, server_socket, dir_path, clients_pend
     if client_address in clients_pending_upload:
         receive_file(packet, client_address, server_socket, dir_path)
 
+
 # devuelve el sequence number con el que termino de mandar el archivo
 def send_file(server_socket, client_address, client_pkt: Packet, dir_path):
     print('[INFO] Descargando archivo...')

@@ -1,5 +1,6 @@
+import os
 import pickle
-import sys
+import argparse
 from socket import *
 from lib.packet import Packet, QueryType
 
@@ -8,7 +9,7 @@ verbose = True
 
 DEFAULT_HOST = '127.0.0.1'
 DEFAULT_PORT = 8000
-MAX_PACKET_SIZE = 1400 # MSS <= 1460
+MAX_PACKET_SIZE = 1400  # MSS <= 1460
 
 
 # Formato linea de comando:
@@ -19,74 +20,43 @@ MAX_PACKET_SIZE = 1400 # MSS <= 1460
 # -p:      Puerto del servidor
 # -d:      Directorio a guardar el archivo bajado
 # -n:      Nombre del archivo a bajar
-# NOTA: SON TODAS ESTAS OPCIONES NO SON OBLIGATORIAS
 def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    file_path = ''
-    file_name = ''
-    [options, args] = parse_args()
-    print('[DEBUG] args = ', args)
-    print('[DEBUG] options = ', options)
+    file_path = os.path.dirname(__file__)
 
-    if options[0]:
-        print_help()
-        exit()
-    if not options[1]:
+    parser = argparse.ArgumentParser(description="Download a specified file from the server")
+
+    # Se elige uno para la verbosidad de los mensajes por consola
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-v", "--verbose", help="increase output verbosity",
+                       action="store_true")
+    group.add_argument("-q", "--quiet",
+                       help="decrease output verbosity", action="store_true")
+
+    # Especificaciones de conexion/bajada de archivo
+    parser.add_argument("-H", "--host", help="server IP address", required=False, type=str)
+    parser.add_argument("-p", "--port", help="server port number", required=False, type=int)
+    parser.add_argument("-d", "--dst", help="destination file path",
+                        required=False, type=str)
+    parser.add_argument("-n", "--file_name", help="file name", required=True, type=str)
+
+    args = parser.parse_args()
+
+    if args.quiet:
         verbose = False
-    if options[2]:
-        server_host = args[0]
-    if options[3]:
-        server_port = int(args[1])
-    if options[4]:
-        file_path = args[2]
-    if options[5]:
-        file_name = args[3]
+    if args.host is not None:
+        server_host = args.host
+    if args.port is not None:
+        server_port = args.port
+    if args.dst is not None:
+        file_path = args.dst
+    file_name = args.file_name
+
+    print("[DEBUG] args= ", [verbose, server_host, server_port, file_path])
 
     rcv_file(server_host, server_port, file_path, file_name)
-
-
-# Devuelve 2 listas:
-# options: opciones de funcionamiento del programa (ej: -p)
-# args: argumentos pasados por consola (ej: 8080)
-def parse_args():
-    # [-h, -v|-q, -H, -p, -d, -n]
-    options = [False, True, False, False, False, False]
-    # [ADDR, PORT, FILEPATH, FILENAME]
-    args = ['', '', '', '']
-    for i in range(1, len(sys.argv)):
-        if sys.argv[i] == '-h' or sys.argv[i] == '--help':
-            options[0] = True
-        elif sys.argv[i] == '-q' or sys.argv[i] == '--quiet':
-            options[1] = False
-        elif sys.argv[i] == '-H' or sys.argv[i] == '--host':
-            options[2] = True
-            args[0] = sys.argv[i + 1]
-        elif sys.argv[i] == '-p' or sys.argv[i] == '--port':
-            options[3] = True
-            args[1] = sys.argv[i + 1]
-        elif sys.argv[i] == '-d' or sys.argv[i] == '--dst':
-            options[4] = True
-            args[2] = sys.argv[i + 1]
-        elif sys.argv[i] == '-n' or sys.argv[i] == '--name':
-            options[5] = True
-            args[3] = sys.argv[i + 1]
-
-    return [options, args]
-
-
-def print_help():
-    print('usage: download [- h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]\n')
-    print('< command description >\n')
-    print('optional arguments:')
-    print('     -h, --help      show this help message and exit')
-    print('     -v, --verbose   increase output verbosity')
-    print('     -q, --quiet     decrease output verbosity')
-    print('     -H, --host      server IP address')
-    print('     -p, --port      server port')
-    print('     -d, --dst       destination file path')
-    print('     -n, --name      file name')
 
 
 def retrans_go_back_n():
@@ -99,7 +69,7 @@ def retrans_stop_n_wait():
 
 def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str):
     client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind((server_host, server_port + 1)) # para prueba localhost
+    client_socket.bind((server_host, server_port + 1))  # para prueba localhost
     packets = []
     seq_num = 1
 

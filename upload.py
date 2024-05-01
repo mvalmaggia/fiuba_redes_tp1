@@ -8,6 +8,7 @@ UDP_IP = "127.0.0.1"
 UDP_PORT = 8000
 PACKET_SIZE = 1024
 
+
 def send_file(file_path, file_name, socket, udp_ip, udp_port):
     seq_num = 0
     try:
@@ -22,6 +23,7 @@ def send_file(file_path, file_name, socket, udp_ip, udp_port):
     except FileNotFoundError:
         print(f"File {file_path} not found")
         exit(1)
+
 
 def upload(udp_ip, udp_port, file_path, file_name): 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -48,9 +50,11 @@ def upload(udp_ip, udp_port, file_path, file_name):
 
     sock.sendto(pickle.dumps(upload_done_packet), (udp_ip, udp_port))
 
+
 def main():
     dir_path = os.path.dirname(__file__) + '/upload_test.txt'
     upload(UDP_IP, UDP_PORT, dir_path, "upload_test.txt")
+
 
 if __name__ == "__main__":
     main()
