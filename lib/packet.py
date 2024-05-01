@@ -14,12 +14,14 @@ class Packet:
     query_type: QueryType
     data: str
 
-    def __init__(self, seq_num, end_conection, query_type=None):
+    def __init__(self, seq_num, end_conection, query_type=None, file_name=None):
         self.seq_num = seq_num
         self.fin = end_conection
         self.ack = 0
         self.query_type = query_type
+        self.file_name = file_name
         self.data = ''
+    
 
     def acknowledge(self, prev_pack_seq_num: int):
         self.ack = prev_pack_seq_num + 1
@@ -52,3 +54,6 @@ class Packet:
     
     def get_is_upload_query(self):
         return (self.query_type == QueryType.UPLOAD)
+    
+    def get_file_name(self):
+        return self.file_name

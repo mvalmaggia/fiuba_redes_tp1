@@ -87,25 +87,25 @@ def listen(host_address: str, port: int, dir_path):
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((host_address, port))
     print('[INFO] Server listo para recibir consultas')
-    seq_num = 1
+    clients_pending_upload = set()
 
     while True:
-        # TODO: cada conexion hecha se debe guardar en un hilo
+        # TODO: un mensaje que corte ejecucion del servidor
         packet, client_address = server_socket.recvfrom(1024)
         
         decoded_packet = pickle.loads(packet)
 
         if decoded_packet.get_fin():
+            clients_pending_upload.discard(client_address)
             print('[INFO] Conexion finalizada lado server')
-            #ver como hacer esto
 
-        thread = threading.Thread(target=handle_message, args=(decoded_packet, client_address, server_socket, dir_path))
+        thread = threading.Thread(target=handle_message, args=(decoded_packet, client_address, server_socket, dir_path, clients_pending_upload))
         thread.start()
 
     server_socket.close()
 
 
-def handle_message(packet, client_address, server_socket, dir_path):
+def handle_message(packet, client_address, server_socket, dir_path, clients_pending_upload):
     # TODO: el servidor puede recibir 2 tipos paquetes -> uno con data para el
     #       upload y otro de consulta para hacer un download
 
@@ -118,8 +118,15 @@ def handle_message(packet, client_address, server_socket, dir_path):
         server_socket.sendto(buff, client_address)
 
         # TODO: aca trabajar el tema de upload
+
     elif packet.get_is_upload_query():
-        upload_file()
+        # tal vez aca crear el archivo nuevo, pisando el anterior
+        clients_pending_upload.add(client_address)
+        send_ack(client_address, server_socket, 0)
+        print("sent ack to client")
+
+    if client_address in clients_pending_upload:
+        receive_file(packet, client_address, server_socket, dir_path)
 
 # devuelve el sequence number con el que termino de mandar el archivo
 def send_file(server_socket, client_address, client_pkt: Packet, dir_path):
@@ -144,8 +151,25 @@ def send_file(server_socket, client_address, client_pkt: Packet, dir_path):
     return seq_num
 
 
-def upload_file():
-    pass
+def receive_file(packet, client_address, server_socket, dir_path):
+    print('[INFO] Subiendo archivo...')
 
+    data = packet.get_data()
+
+    print(packet.get_file_name())
+
+    file_path = dir_path + '/' + packet.get_file_name()
+    print(file_path)
+
+    with open(file_path, "ab") as file:
+            file.write(data.encode())
+
+    send_ack(client_address, server_socket, packet.get_seq_num())
+
+def send_ack(client_address, server_socket, seq_num):
+    ack_packet = Packet(0, False)
+    ack_packet.acknowledge(seq_num)
+    buf = pickle.dumps(ack_packet)
+    server_socket.sendto(buf, client_address)
 
 main()
