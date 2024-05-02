@@ -1,7 +1,7 @@
 import os
 import pickle
 import argparse
-from socket import *
+from socket import AF_INET, SOCK_DGRAM, socket
 from lib.packet import Packet, QueryType
 
 # Por defecto
@@ -26,7 +26,8 @@ def main():
     server_port = DEFAULT_PORT
     file_path = os.path.dirname(__file__)
 
-    parser = argparse.ArgumentParser(description="Download a specified file from the server")
+    parser = argparse.ArgumentParser(
+        description="Download a specified file from the server")
 
     # Se elige uno para la verbosidad de los mensajes por consola
     group = parser.add_mutually_exclusive_group()
@@ -36,11 +37,14 @@ def main():
                        help="decrease output verbosity", action="store_true")
 
     # Especificaciones de conexion/bajada de archivo
-    parser.add_argument("-H", "--host", help="server IP address", required=False, type=str)
-    parser.add_argument("-p", "--port", help="server port number", required=False, type=int)
+    parser.add_argument("-H", "--host", help="server IP address",
+                        required=False, type=str)
+    parser.add_argument("-p", "--port", help="server port number",
+                        required=False, type=int)
     parser.add_argument("-d", "--dst", help="destination file path",
                         required=False, type=str)
-    parser.add_argument("-n", "--file_name", help="file name", required=True, type=str)
+    parser.add_argument("-n", "--file_name", help="file name",
+                        required=True, type=str)
 
     args = parser.parse_args()
 
@@ -78,13 +82,15 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
 
     # Creo paquete de consulta para bajar archivos
     query_packet = Packet(seq_num, False, QueryType.DOWNLOAD)
-    # Uso el modulo 'pickle' para poder guardar el paquete en bytes y asi poder mandarlo
+    # Uso el modulo 'pickle' para poder guardar el paquete en 
+    # bytes y asi poder mandarlo
     query_packet.insert_data(file_name)
     buffer = pickle.dumps(query_packet)
     client_socket.sendto(buffer, (server_host, server_port))
 
     while True:
-        encoded_packet, server_address = client_socket.recvfrom(MAX_PACKET_SIZE)
+        encoded_packet, server_address = client_socket.recvfrom(
+            MAX_PACKET_SIZE)
         decoded_packet = pickle.loads(encoded_packet)
 
         print('[DEBUG] Paquete recibido: ')
@@ -110,7 +116,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     rebuild_file(packets, file_path, file_name)
 
 
-def rebuild_file(packets: [], file_path: str, file_name: str):
+def rebuild_file(packets: list, file_path: str, file_name: str):
     print('[INFO] Paquete recibido: ', packets[0].get_data())
     # TODO: faltaria ordenar los paquetes segun su sequence number
     dwld_file = open(file_path + '/' + file_name, 'w')
