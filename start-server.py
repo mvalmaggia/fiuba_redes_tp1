@@ -5,7 +5,6 @@ import argparse
 from socket import *
 from lib.packet import Packet
 import os
-import time
 # Por defecto
 verbose = True
 
@@ -141,8 +140,6 @@ def receive_file(packet, client_address, server_socket, dir_path):
 
     with open(file_path, "ab") as file:
             file.write(data.encode())
-
-    time.sleep(20)
 
     send_ack(client_address, server_socket, packet.get_seq_num())
 
