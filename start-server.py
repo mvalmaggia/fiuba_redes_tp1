@@ -5,7 +5,7 @@ import argparse
 from socket import *
 from lib.packet import Packet
 import os
-
+import time
 # Por defecto
 verbose = True
 
@@ -62,7 +62,7 @@ def listen(host_address: str, port: int, dir_path):
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((host_address, port))
     print('[INFO] Server listo para recibir consultas')
-    clients_pending_upload = set()
+    clients_pending_upload = {}
 
     while True:
         # TODO: un mensaje que corte ejecucion del servidor
@@ -71,7 +71,7 @@ def listen(host_address: str, port: int, dir_path):
         decoded_packet = pickle.loads(packet)
 
         if decoded_packet.get_fin():
-            clients_pending_upload.discard(client_address)
+            clients_pending_upload.pop(client_address, None)
             print('[INFO] Conexion finalizada lado server')
             break
 
@@ -93,15 +93,16 @@ def handle_message(packet, client_address, server_socket, dir_path, clients_pend
         buff = pickle.dumps(end_pkt)
         server_socket.sendto(buff, client_address)
 
-        # TODO: aca trabajar el tema de upload
-
     elif packet.get_is_upload_query():
-        # tal vez aca crear el archivo nuevo, pisando el anterior
-        clients_pending_upload.add(client_address)
+        open(dir_path + '/' + packet.get_file_name(), "w").close()
+        clients_pending_upload[client_address] = 1
         send_ack(client_address, server_socket, 0)
         print("sent ack to client")
 
-    if client_address in clients_pending_upload:
+    if client_address in clients_pending_upload and clients_pending_upload[client_address] != packet.get_seq_num():
+        print(clients_pending_upload[client_address])
+        print(packet.get_seq_num())
+        clients_pending_upload[client_address] = packet.get_seq_num()
         receive_file(packet, client_address, server_socket, dir_path)
 
 
@@ -140,6 +141,8 @@ def receive_file(packet, client_address, server_socket, dir_path):
 
     with open(file_path, "ab") as file:
             file.write(data.encode())
+
+    time.sleep(20)
 
     send_ack(client_address, server_socket, packet.get_seq_num())
 
