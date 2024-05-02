@@ -7,9 +7,6 @@ import argparse
 import logging as log
 
 # upload [-h] [-v | -q] [-H ADDR ] [-p PORT ] [-s FILEPATH ] [-n FILENAME ]
-UDP_IP = "127.0.0.1"
-UDP_PORT = 8000
-PACKET_SIZE = 1024
 
 # optional arguments:-h,--help show this help message and exit
 # -v, --verbose increase output verbosity
@@ -19,18 +16,30 @@ PACKET_SIZE = 1024
 # -s, --src source file path
 # -n, --name file name
 
-parser = argparse.ArgumentParser(description='Transferencia de un archivo del cliente hacia el servidor.')
+parser = argparse.ArgumentParser(
+    description='Transferencia de un archivo del cliente hacia el servidor.')
 
 group = parser.add_mutually_exclusive_group()
-group.add_argument('-v', '--verbose', action='store_true', help="increase output verbosity")
-group.add_argument('-q', '--quite', action='store_false', help="decrease output verbosity")
+group.add_argument('-v', '--verbose', action='store_true',
+                   help="increase output verbosity")
+group.add_argument('-q', '--quite', action='store_false',
+                   help="decrease output verbosity")
 
-parser.add_argument('-H', '--host', help="server IP address", default="127.0.0.1")
+parser.add_argument('-H', '--host', metavar="ADDR", help="server IP address",
+                    default="127.0.0.1")
 parser.add_argument('-p', '--port', help="server port", default="8000")
-parser.add_argument('-s', '--src', help="source file path", default=os.path.dirname(__file__))
-parser.add_argument('-n', '--name', help="file name", default="upload_test.txt")
+parser.add_argument('-s', '--src', metavar="FILEPATH", help="source file path",
+                    default=os.path.dirname(__file__))
+parser.add_argument('-n', '--name', metavar="FILENAME", help="file name",
+                    default="upload_test.txt")
 
 args = parser.parse_args()
+
+UDP_IP = args.host
+UDP_PORT = args.port
+
+PACKET_SIZE = 1024
+
 
 if args.verbose:
     log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
@@ -39,6 +48,7 @@ else:
     log.basicConfig(format="%(levelname)s: %(message)s")
 
 TIMEOUT = 5
+
 
 def stop_n_wait(socket, packet, udp_ip, udp_port, seq_num):
     socket.settimeout(TIMEOUT)
@@ -50,7 +60,7 @@ def stop_n_wait(socket, packet, udp_ip, udp_port, seq_num):
 
         if decoded_packet.get_ack() == seq_num + 1:
             return
-        
+
     except TimeoutError:
         stop_n_wait(socket, packet, udp_ip, udp_port, seq_num)
 
@@ -62,7 +72,7 @@ def send_file(socket, file_path, file_name, udp_ip, udp_port):
             file_content = file.read(PACKET_SIZE)
             while file_content:
                 seq_num += sys.getsizeof(file_content)
-                
+
                 data_packet = Packet(seq_num, False, file_name=file_name)
                 data_packet.insert_data(file_content)
                 stop_n_wait(socket, data_packet, udp_ip, udp_port, seq_num)
@@ -77,7 +87,8 @@ def send_file(socket, file_path, file_name, udp_ip, udp_port):
 def upload(udp_ip, udp_port, file_path, file_name): 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    upload_query_packet = Packet(0, False, QueryType.UPLOAD, file_name=file_name)
+    upload_query_packet = Packet(0, False, QueryType.UPLOAD, 
+                                 file_name=file_name)
 
     serialised_packet = pickle.dumps(upload_query_packet)
     sock.sendto(serialised_packet, (udp_ip, udp_port))
@@ -104,4 +115,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

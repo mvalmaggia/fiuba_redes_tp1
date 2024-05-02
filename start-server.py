@@ -1,8 +1,7 @@
 import pickle
-import sys
+from socket import AF_INET, SOCK_DGRAM, socket
 import threading
 import argparse
-from socket import *
 from lib.packet import Packet
 import os
 # Por defecto
@@ -26,7 +25,8 @@ def main():
     server_port = DEFAULT_PORT
     dir_path = os.path.dirname(__file__) + '/files'
 
-    parser = argparse.ArgumentParser(description="Server capable of uploading/downloading files")
+    parser = argparse.ArgumentParser(
+        description="Server capable of uploading/downloading files")
 
     # Se elige uno para la verbosidad de los mensajes por consola
     group = parser.add_mutually_exclusive_group()
@@ -36,8 +36,10 @@ def main():
                        help="decrease output verbosity", action="store_true")
 
     # Especificaciones de conexion/guardado de archivo
-    parser.add_argument("-H", "--host", help="service IP address", required=False, type=str)
-    parser.add_argument("-p", "--port", help="service port number", required=False, type=int)
+    parser.add_argument("-H", "--host", help="service IP address",
+                        required=False, type=str)
+    parser.add_argument("-p", "--port", help="service port number",
+                        required=False, type=int)
     parser.add_argument("-s", "--storage", help="storage dir path",
                         required=False, type=str)
 
@@ -66,7 +68,7 @@ def listen(host_address: str, port: int, dir_path):
     while True:
         # TODO: un mensaje que corte ejecucion del servidor
         packet, client_address = server_socket.recvfrom(1024)
-        
+
         decoded_packet = pickle.loads(packet)
 
         if decoded_packet.get_fin():
@@ -74,13 +76,19 @@ def listen(host_address: str, port: int, dir_path):
             print('[INFO] Conexion finalizada lado server')
             break
 
-        thread = threading.Thread(target=handle_message, args=(decoded_packet, client_address, server_socket, dir_path, clients_pending_upload))
+        thread = threading.Thread(target=handle_message,
+                                  args=(decoded_packet,
+                                        client_address,
+                                        server_socket,
+                                        dir_path,
+                                        clients_pending_upload))
         thread.start()
 
     server_socket.close()
 
 
-def handle_message(packet, client_address, server_socket, dir_path, clients_pending_upload):
+def handle_message(packet, client_address, server_socket, dir_path,
+                   clients_pending_upload):
     # TODO: el servidor puede recibir 2 tipos paquetes -> uno con data para el
     #       upload y otro de consulta para hacer un download
 
@@ -98,7 +106,8 @@ def handle_message(packet, client_address, server_socket, dir_path, clients_pend
         send_ack(client_address, server_socket, 0)
         print("sent ack to client")
 
-    if client_address in clients_pending_upload and clients_pending_upload[client_address] != packet.get_seq_num():
+    if (client_address in clients_pending_upload and
+            clients_pending_upload[client_address] != packet.get_seq_num()):
         print(clients_pending_upload[client_address])
         print(packet.get_seq_num())
         clients_pending_upload[client_address] = packet.get_seq_num()
@@ -106,7 +115,8 @@ def handle_message(packet, client_address, server_socket, dir_path, clients_pend
 
 
 # devuelve el sequence number con el que termino de mandar el archivo
-def send_file(server_socket, client_address, client_pkt: Packet, dir_path: str):
+def send_file(server_socket, client_address, client_pkt: Packet, 
+              dir_path: str):
     print('[INFO] Descargando archivo...')
     seq_num = 1
 
@@ -139,7 +149,7 @@ def receive_file(packet, client_address, server_socket, dir_path):
     print(file_path)
 
     with open(file_path, "ab") as file:
-            file.write(data.encode())
+        file.write(data.encode())
 
     send_ack(client_address, server_socket, packet.get_seq_num())
 

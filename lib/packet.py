@@ -52,9 +52,9 @@ class Packet:
 
     def get_is_download_query(self):
         return self.query_type == QueryType.DOWNLOAD
-    
+
     def get_is_upload_query(self):
         return self.query_type == QueryType.UPLOAD
-    
+
     def get_file_name(self):
         return self.file_name
