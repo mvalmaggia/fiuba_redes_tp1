@@ -3,11 +3,41 @@ import pickle
 import os
 import sys
 from lib.packet import Packet, QueryType
+import argparse
+import logging as log
 
 # upload [-h] [-v | -q] [-H ADDR ] [-p PORT ] [-s FILEPATH ] [-n FILENAME ]
 UDP_IP = "127.0.0.1"
 UDP_PORT = 8000
 PACKET_SIZE = 1024
+
+# optional arguments:-h,--help show this help message and exit
+# -v, --verbose increase output verbosity
+# -q, --quiet decrease output verbosity
+# -H, --host server IP address
+# -p, --port server port
+# -s, --src source file path
+# -n, --name file name
+
+parser = argparse.ArgumentParser(description='Transferencia de un archivo del cliente hacia el servidor.')
+
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-v', '--verbose', action='store_true', help="increase output verbosity")
+group.add_argument('-q', '--quite', action='store_false', help="decrease output verbosity")
+
+parser.add_argument('-H', '--host', help="server IP address", default="127.0.0.1")
+parser.add_argument('-p', '--port', help="server port", default="8000")
+parser.add_argument('-s', '--src', help="source file path", default=os.path.dirname(__file__))
+parser.add_argument('-n', '--name', help="file name", default="upload_test.txt")
+
+args = parser.parse_args()
+
+if args.verbose:
+    log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+    log.info("Verbose output.")
+else:
+    log.basicConfig(format="%(levelname)s: %(message)s")
+
 TIMEOUT = 5
 
 def stop_n_wait(socket, packet, udp_ip, udp_port, seq_num):
@@ -68,8 +98,8 @@ def upload(udp_ip, udp_port, file_path, file_name):
 
 
 def main():
-    dir_path = os.path.dirname(__file__) + '/upload_test.txt'
-    upload(UDP_IP, UDP_PORT, dir_path, "upload_test.txt")
+    dir_path = os.path.join(args.src, args.name)
+    upload(UDP_IP, UDP_PORT, dir_path, args.name)
 
 
 if __name__ == "__main__":
