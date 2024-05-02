@@ -98,7 +98,7 @@ def upload(udp_ip, udp_port, file_path, file_name):
 
 
 def main():
-    dir_path =  os.path.join(args.src, args.name)
+    dir_path = os.path.join(args.src, args.name)
     upload(UDP_IP, UDP_PORT, dir_path, args.name)
 
 
