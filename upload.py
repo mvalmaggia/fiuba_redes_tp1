@@ -60,6 +60,7 @@ def stop_n_wait(socket, packet, udp_ip, udp_port, seq_num):
 
         ack_packet, server_address = socket.recvfrom(1024)
         decoded_packet = pickle.loads(ack_packet)
+        print(f"Recibo ack del paquete: {decoded_packet}")
 
         if decoded_packet.get_ack() == seq_num + 1:
             return
@@ -102,7 +103,7 @@ def upload(udp_ip, udp_port, file_path, file_name):
     print(decoded_packet.get_ack())
     if decoded_packet.get_ack() != 1:
         return
-    print("received ack after request")
+    print("received ack after request, starting upload...")
 
     send_file(sock, file_path, file_name, udp_ip, udp_port)
 

@@ -104,9 +104,9 @@ def handle_message(packet, client_address, server_socket, dir_path,
         open(dir_path + '/' + packet.get_file_name(), "w").close()
         clients_pending_upload[client_address] = 1
         send_ack(client_address, server_socket, 0)
-        print("sent ack to client")
+        print("sent ack to client to start upload")
 
-    if (client_address in clients_pending_upload and
+    elif (client_address in clients_pending_upload and
             clients_pending_upload[client_address] != packet.get_seq_num()):
         print(clients_pending_upload[client_address])
         print(packet.get_seq_num())
