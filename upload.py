@@ -33,7 +33,8 @@ parser.add_argument('-s', '--src', metavar="FILEPATH", help="source file path",
                     default=os.path.dirname(__file__) +
                     '/data/uploads/test.txt')
 
-# file name es el nombre con el cual se va a guardar el archivo en el server_storage
+# file name es el nombre con el cual se va a guardar el archivo en el
+# server_storage
 parser.add_argument('-n', '--name', metavar="FILENAME", help="file name",
                     default="upload_test.txt")
 
