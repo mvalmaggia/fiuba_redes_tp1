@@ -23,10 +23,10 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    dir_path = os.path.dirname(__file__) + '/storage'
+    dir_path = os.path.dirname(__file__) + '/data/server_storage'
 
     parser = argparse.ArgumentParser(
-        description="Server capable of uploading/downloading files")
+        description="Server capable of uploading/downloading uploads")
 
     # Se elige uno para la verbosidad de los mensajes por consola
     group = parser.add_mutually_exclusive_group()
@@ -40,7 +40,7 @@ def main():
                         required=False, type=str)
     parser.add_argument("-p", "--port", help="service port number",
                         required=False, type=int)
-    parser.add_argument("-s", "--storage", help="storage dir path", default=dir_path,
+    parser.add_argument("-s", "--storage", help="server_storage dir path", default=dir_path,
                         required=False, type=str)
 
     args = parser.parse_args()

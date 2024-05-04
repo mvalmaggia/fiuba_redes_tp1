@@ -24,7 +24,7 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    file_path = os.path.dirname(__file__)
+    file_path = os.path.dirname(__file__) + '/data/downloads'
 
     parser = argparse.ArgumentParser(
         description="Download a specified file from the server")
@@ -43,7 +43,7 @@ def main():
                         required=False, type=int)
     parser.add_argument("-d", "--dst", help="destination file path",
                         required=False, type=str)
-    parser.add_argument("-n", "--file_name", help="file name",
+    parser.add_argument("-n", "--file_name", help="file name", default='upload_test.txt',
                         required=True, type=str)
 
     args = parser.parse_args()

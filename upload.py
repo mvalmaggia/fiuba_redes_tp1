@@ -30,8 +30,8 @@ parser.add_argument('-H', '--host', metavar="ADDR", help="server IP address",
 parser.add_argument('-p', '--port', help="server port", default=8000)
 # src es el archivo que se va a subir al servidor
 parser.add_argument('-s', '--src', metavar="FILEPATH", help="source file path",
-                    default=os.path.dirname(__file__) + '/files/test.txt')
-# file name es el nombre con el cual se va a guardar el archivo en el storage
+                    default=os.path.dirname(__file__) + '/data/uploads/test.txt')
+# file name es el nombre con el cual se va a guardar el archivo en el server_storage
 parser.add_argument('-n', '--name', metavar="FILENAME", help="file name",
                     default="upload_test.txt")
 

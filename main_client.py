@@ -8,7 +8,7 @@ from upload import upload
 # [-d FILEPATH] [-n FILENAME]
 def main():
     parser = argparse.ArgumentParser(
-        description="Upload or download files from a server")
+        description="Upload or download uploads from a server")
     # El comando es requerido
     parser.add_argument("command", help="Command to execute",
                         choices=["upload", "download"], type=str)
