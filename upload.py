@@ -55,6 +55,7 @@ TIMEOUT = 5
 def stop_n_wait(socket, packet, udp_ip, udp_port, seq_num):
     socket.settimeout(TIMEOUT)
     try:
+        print(f"Enviando el paquete: {packet}")
         socket.sendto(pickle.dumps(packet), (udp_ip, udp_port))
 
         ack_packet, server_address = socket.recvfrom(1024)

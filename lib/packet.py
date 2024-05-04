@@ -58,3 +58,6 @@ class Packet:
 
     def get_file_name(self):
         return self.file_name
+
+    def __str__(self):
+        return f"Packet(seq_num={self.seq_num}, ack={self.ack}, fin={self.fin}, query_type={self.query_type}, data={self.data})"

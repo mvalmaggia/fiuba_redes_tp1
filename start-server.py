@@ -149,6 +149,7 @@ def receive_file(packet, client_address, server_socket, dir_path):
     print(file_path)
 
     with open(file_path, "ab") as file:
+        print(f"Se va a escribir en {file_path} el siguiente contenido: {data}")
         file.write(data.encode())
 
     send_ack(client_address, server_socket, packet.get_seq_num())
