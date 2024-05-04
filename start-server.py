@@ -23,7 +23,7 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    dir_path = os.path.dirname(__file__) + '/files'
+    dir_path = os.path.dirname(__file__) + '/storage'
 
     parser = argparse.ArgumentParser(
         description="Server capable of uploading/downloading files")
@@ -40,7 +40,7 @@ def main():
                         required=False, type=str)
     parser.add_argument("-p", "--port", help="service port number",
                         required=False, type=int)
-    parser.add_argument("-s", "--storage", help="storage dir path",
+    parser.add_argument("-s", "--storage", help="storage dir path", default=dir_path,
                         required=False, type=str)
 
     args = parser.parse_args()
