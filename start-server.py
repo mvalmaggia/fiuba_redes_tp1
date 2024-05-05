@@ -9,7 +9,7 @@ verbose = True
 
 DEFAULT_HOST = '127.0.0.1'
 DEFAULT_PORT = 8000
-
+BLOCK_SIZE = 1024 * 4
 
 # Formato linea de comando:
 # start-server [-h] [-v | -q] [-H ADDR] [-p PORT] [-s DIRPATH]
@@ -18,6 +18,7 @@ DEFAULT_PORT = 8000
 # -H:      Direccion IP del servidor
 # -p:      Puerto del servidor
 # -s:      Directorio encargado de guardar archivos
+
 
 def main():
     global verbose
@@ -40,7 +41,8 @@ def main():
                         required=False, type=str)
     parser.add_argument("-p", "--port", help="service port number",
                         required=False, type=int)
-    parser.add_argument("-s", "--storage", help="server_storage dir path", default=dir_path,
+    parser.add_argument("-s", "--storage", help="server_storage dir path",
+                        default=dir_path,
                         required=False, type=str)
 
     args = parser.parse_args()
@@ -53,6 +55,9 @@ def main():
         server_port = args.port
     if args.storage is not None:
         dir_path = args.storage
+        # Si dir_path especificado por argumento no existe, lo crea
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
 
     print("[DEBUG] args= ", [verbose, server_host, server_port, dir_path])
 
@@ -66,10 +71,9 @@ def listen(host_address: str, port: int, dir_path):
     clients_pending_upload = {}
 
     while True:
-        # TODO: un mensaje que corte ejecucion del servidor
-        packet, client_address = server_socket.recvfrom(1024)
-
-        decoded_packet = pickle.loads(packet)
+        data, client_address = server_socket.recvfrom(BLOCK_SIZE)
+        # Deserializo el Packet
+        decoded_packet = pickle.loads(data)
 
         if decoded_packet.get_fin():
             clients_pending_upload.pop(client_address, None)
@@ -126,6 +130,7 @@ def send_file(server_socket, client_address, client_pkt: Packet,
     server_socket.sendto(buf, client_address)
 
     print('[DEBUG] dir = ', dir_path + '/' + client_pkt.get_data())
+
     file = open(dir_path + '/' + client_pkt.get_data(), 'r')
     data = file.read()
     file.close()
@@ -148,8 +153,10 @@ def receive_file(packet, client_address, server_socket, dir_path):
     file_path = dir_path + '/' + packet.get_file_name()
     print(file_path)
 
-    with open(file_path, "ab") as file:
-        print(f"Se va a escribir en {file_path} el siguiente contenido: {data}")
+    # wb porque si existe el archivo debo sobreescribirlo
+    with open(file_path, "wb") as file:
+        print(f"Se va a escribir en {file_path} el siguiente "
+              f"contenido: {data}")
         file.write(data.encode())
 
     send_ack(client_address, server_socket, packet.get_seq_num())
