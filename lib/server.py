@@ -3,7 +3,7 @@ import pickle
 
 from lib.packet import Packet
 from lib.sec_num_registry import SecNumberRegistry
-from lib.transmission import send, receive, send_file
+from lib.transmission import send, receive, send_file, receive_file
 
 
 class Server:
@@ -34,47 +34,19 @@ class Server:
         print('[INFO] Conexion con ', client_address)
 
         if packet.get_is_download_query():
+            self.send_ack(client_address, packet.get_seq_num())
             send_file(self.server_socket, client_address, self.dir_path + '/' + packet.get_file_name(), self.secs_num_registry)
-
         elif packet.get_is_upload_query():
             open(self.dir_path + '/' + packet.get_file_name(), "w").close()
             self.clients_pending_upload[client_address] = 1
-            self.send_ack(client_address, self.server_socket, 0)
-            print("sent ack to client to start upload")
-
-        elif (client_address in self.clients_pending_upload and
-              self.clients_pending_upload[client_address] != packet.get_seq_num()):
-            print(self.clients_pending_upload[client_address])
-            print(packet.get_seq_num())
+            self.send_ack(client_address, packet.get_seq_num())
+        elif client_address in self.clients_pending_upload:
             self.clients_pending_upload[client_address] = packet.get_seq_num()
-            self.receive_file(packet, client_address, self.server_socket, self.dir_path)
+            receive_file(packet, self.dir_path)
+            self.send_ack(client_address, packet.get_seq_num())
+        else:
+            print('[ERROR] Query no reconocida')
 
-    def receive_file(self, packet, client_address, server_socket, dir_path):
-        print('[INFO] Subiendo archivo...')
-
-        data = packet.get_data()
-
-        print(packet.get_file_name())
-
-        file_path = dir_path + '/' + packet.get_file_name()
-        print(file_path)
-
-        with open(file_path, "ab") as file:
-            print(f"Se va a escribir en {file_path} el siguiente contenido: {data}")
-            file.write(data.encode())
-
-        self.send_ack(client_address, server_socket, packet.get_seq_num())
-
-    def send_ack(self, client_address, server_socket, seq_num):
-        ack_packet = Packet(0, False)
-        ack_packet.acknowledge(seq_num)
-        buf = pickle.dumps(ack_packet)
-        server_socket.sendto(buf, client_address)
-
-    def receive_packet(self):
-        """  Recibe un paquete y lo decodifica y si corresponde envia un ack
-        """
-        raw_packet, client_address = self.server_socket.recvfrom(1024)
-        packet: Packet = pickle.loads(raw_packet)
-        if packet.ack:
-            self.secs_num_registry.update_sec_num(client_address, packet.seq_num)
+    def send_ack(self, client_address, seq_num):
+        ack_packet = Packet(seq_num + 1, ack=True)
+        send(self.server_socket, client_address, ack_packet, self.secs_num_registry)

@@ -30,8 +30,6 @@ def receive(server_socket, ack_tracker: SecNumberRegistry) -> (Packet, str):
     if decoded_packet.ack:
         ack_tracker.put(sender_address, decoded_packet.seq_num)
         return decoded_packet, sender_address
-    ack_packet = Packet(decoded_packet.seq_num + 1, ack=True)
-    send(server_socket, sender_address, ack_packet, ack_tracker)
     return decoded_packet, sender_address
 
 
@@ -49,3 +47,10 @@ def send_file(server_socket, client_address, file_path, registry: SecNumberRegis
         # Se envia un paquete con el fin de la transmision
         fin_packet = Packet(sec_num + 1, True)
         send(server_socket, client_address, fin_packet, registry)
+
+
+def receive_file(packet: Packet, dir_path):
+    data = packet.get_data()
+    file_path = dir_path + '/' + packet.get_file_name()
+    with open(file_path, "ab") as file:
+        file.write(data.encode())
