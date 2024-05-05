@@ -3,7 +3,8 @@ import pickle
 import argparse
 from socket import AF_INET, SOCK_DGRAM, socket
 from lib.packet import Packet, QueryType
-
+from upload import check_ack_client
+from lib.transmission import send, receive
 # Por defecto
 verbose = True
 
@@ -74,25 +75,18 @@ def retrans_stop_n_wait():
 def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str):
     client_socket = socket(AF_INET, SOCK_DGRAM)
     client_socket.bind((server_host, server_port + 1))  # para prueba localhost
+    server_address = (server_host, server_port)
+    seq_num_client = 0
     packets = []
-    seq_num = 1
+    function_check_ack = lambda sec_num_to_check: check_ack_client(client_socket, sec_num_to_check)
 
     print('[DEBUG] file_path = ', file_path)
     print('[DEBUG] file_name = ', file_name)
-
-    # Creo paquete de consulta para bajar archivos
-    query_packet = Packet(seq_num, False, QueryType.DOWNLOAD)
-    # Uso el modulo 'pickle' para poder guardar el paquete en 
-    # bytes y asi poder mandarlo
-    query_packet.insert_data(file_name)
-    buffer = pickle.dumps(query_packet)
-    client_socket.sendto(buffer, (server_host, server_port))
-
+    # Query
+    query_packet = Packet(seq_num_client, False, QueryType.DOWNLOAD)
+    send(client_socket, server_address, query_packet, function_check_ack, 0.1, 5)
     while True:
-        encoded_packet, server_address = client_socket.recvfrom(
-            MAX_PACKET_SIZE)
-        decoded_packet = pickle.loads(encoded_packet)
-
+        decoded_packet, _ = receive(client_socket)
         print('[DEBUG] Paquete recibido: ')
         print('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
         print('[DEBUG]   ack: ', decoded_packet.get_ack())
@@ -101,14 +95,14 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
         if decoded_packet.get_fin():
             print('[INFO] Conexion finalizada lado cliente')
             break
-
-        # TODO: revisar con checksum que el paquete esta intacto
-        if decoded_packet.get_ack() != 0:
+        if not decoded_packet.get_ack():
             packets.append(decoded_packet)
-        # client_socket.sendto('ack', server_address)
+        else:
+            continue
+        ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
+        send(client_socket, server_address, ack_packet, function_check_ack, 0.1, 5)
 
-    # TODO: una vez conseguido el paquete completo -> terminar comunicacion
-    fin_pkt = Packet(seq_num + 1, True)
+    fin_pkt = Packet(seq_num_client + 1, True)
     buffer = pickle.dumps(fin_pkt)
     client_socket.sendto(buffer, (server_host, server_port))
 
