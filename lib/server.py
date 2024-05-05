@@ -16,8 +16,11 @@ class Server:
         while True:
             # TODO: un mensaje que corte ejecucion del servidor
             packet, client_address = self.server_socket.recvfrom(1024)
-
             decoded_packet: Packet = pickle.loads(packet)
+            if decoded_packet.get_fin():
+                self.clients_pending_upload.pop(client_address, None)
+                print('[INFO] Conexion finalizada lado server')
+                continue
 
             thread = threading.Thread(target=self.handle_message,
                                       args=(decoded_packet,
