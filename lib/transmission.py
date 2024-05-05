@@ -10,33 +10,28 @@ from sec_num_registry import SecNumberRegistry
 # Que por convencion el sequence number que se envia en el ack es el sequence number del paquete recibido + 1.
 # Que es necesario mantener registro de los sequence numbers pues estos son la cantidad de bytes enviados.
 # Ademas es necesario mantener este registro para poder enviar el ack correspondiente y poder ordenar los paquetes.
+# Quien envia paquetes es el que debe mantener el registro del ultimo sequence number enviado.
+def send(server_socket, client_address: str, packet: Packet, registry: SecNumberRegistry, timeout=0.1, attempts=5) -> bool:
+    server_socket.sendto(pickle.dumps(packet), client_address)
+    if packet.ack:
+        return True
 
-def send(server_socket, client_address: str, data, registry: SecNumberRegistry, timeout=0.1, attempts=5) -> bool:
-    seq_num = registry.get_sec_num(client_address)
-    packet = Packet(seq_num, False)
-    packet.insert_data(data)
-    encoded_packet = pickle.dumps(packet)
-    for i in range(attempts):
-        server_socket.sendto(encoded_packet, client_address)
-        server_socket.settimeout(timeout)
-        try:
-            # ESTO ESTA MAL, TENGO QUE HACER POLLING DE MI ESTRUCTURA DE DATOS
-            ack_packet, _ = server_socket.recvfrom(1024)
-            decoded_packet = pickle.loads(ack_packet)
-            if decoded_packet.get_ack() == seq_num + 1:
-                registry.update_sec_num(client_address, seq_num + 1)
-                return True
-        except:
-            continue
+    for _ in range(attempts):
+        if registry.has(client_address, packet.seq_num + 1):
+            return True
+        time.sleep(timeout)
+        server_socket.sendto(pickle.dumps(packet), client_address)
     return False
 
-# def receive(server_socket, ack_tracker: SecNumberRegistry) -> Packet:
-#     packet, sender_address = server_socket.recvfrom(1024)
-#     decoded_packet: Packet = pickle.loads(packet)
-#     if decoded_packet.ack:
-#         ack_tracker.add_ack(sender_address, decoded_packet.seq_num)
-#     ack_packet = pickle.dumps(Packet(decoded_packet.seq_num, False, ack=True))
-#     server_socket.sendto(ack_packet, sender_address)
-#     return decoded_packet
-#
+
+def receive(server_socket, ack_tracker: SecNumberRegistry) -> Packet:
+    packet, sender_address = server_socket.recvfrom(1024)
+    decoded_packet: Packet = pickle.loads(packet)
+    if decoded_packet.ack:
+        ack_tracker.put(sender_address, decoded_packet.seq_num)
+        return decoded_packet
+    ack_packet = Packet(decoded_packet.seq_num + 1, ack=True)
+    send(server_socket, sender_address, ack_packet, ack_tracker)
+    return decoded_packet
+
 

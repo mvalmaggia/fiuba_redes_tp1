@@ -11,21 +11,21 @@ class QueryType(Enum):
 class Packet:
     seq_num: int
     checksum: int
-    ack: int
+    ack: bool
     fin: bool
     query_type: QueryType
     data: str
 
-    def __init__(self, seq_num, end_conection, query_type=None, file_name=None):
+    def __init__(self, seq_num, end_conection=False, query_type=None, file_name=None, ack=False):
         self.seq_num = seq_num
         self.fin = end_conection
-        self.ack = 0
+        self.ack = ack
         self.query_type = query_type
         self.file_name = file_name
         self.data = ''
 
-    def acknowledge(self, prev_pack_seq_num: int):
-        self.ack = prev_pack_seq_num + 1
+    def acknowledge(self):
+        self.ack = True
 
     def insert_data(self, data: str):
         if data.__sizeof__() < MAX_DATA_SIZE:

@@ -3,8 +3,7 @@ import pickle
 
 from lib.packet import Packet
 from lib.sec_num_registry import SecNumberRegistry
-from lib.transmission import send
-
+from lib.transmission import send, receive
 
 class Server:
     def __init__(self, server_socket, dir_path):
@@ -16,11 +15,13 @@ class Server:
     def listen(self):
         print('[INFO] Server listo para recibir consultas')
         while True:
-            packet, client_address = self.receive_packet()
-            if decoded_packet.get_fin():
-                self.clients_pending_upload.pop(client_address, None)
-                print('[INFO] Conexion finalizada lado server')
+            received_packet = receive(self.server_socket, self.secs_num_registry)
+            if received_packet.ack:
                 continue
+            # if decoded_packet.get_fin():
+            #     self.clients_pending_upload.pop(client_address, None)
+            #     print('[INFO] Conexion finalizada lado server')
+            #     continue
 
             thread = threading.Thread(target=self.handle_message,
                                       args=(decoded_packet,
