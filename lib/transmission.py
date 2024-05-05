@@ -24,14 +24,28 @@ def send(server_socket, client_address: str, packet: Packet, registry: SecNumber
     return False
 
 
-def receive(server_socket, ack_tracker: SecNumberRegistry) -> Packet:
+def receive(server_socket, ack_tracker: SecNumberRegistry) -> (Packet, str):
     packet, sender_address = server_socket.recvfrom(1024)
     decoded_packet: Packet = pickle.loads(packet)
     if decoded_packet.ack:
         ack_tracker.put(sender_address, decoded_packet.seq_num)
-        return decoded_packet
+        return decoded_packet, sender_address
     ack_packet = Packet(decoded_packet.seq_num + 1, ack=True)
     send(server_socket, sender_address, ack_packet, ack_tracker)
-    return decoded_packet
+    return decoded_packet, sender_address
 
 
+def send_file(server_socket, client_address, file_path, registry: SecNumberRegistry):
+    # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
+    sec_num = registry.get(client_address)
+    with open(file_path, "r") as file:
+        file_content = file.read(1024)
+        while file_content:
+            sec_num += len(file_content)
+            data_packet = Packet(sec_num, False)
+            data_packet.insert_data(file_content)
+            send(server_socket, client_address, data_packet, registry)
+            file_content = file.read(1024)
+        # Se envia un paquete con el fin de la transmision
+        fin_packet = Packet(sec_num + 1, True)
+        send(server_socket, client_address, fin_packet, registry)

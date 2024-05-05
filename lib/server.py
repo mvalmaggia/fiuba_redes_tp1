@@ -3,7 +3,8 @@ import pickle
 
 from lib.packet import Packet
 from lib.sec_num_registry import SecNumberRegistry
-from lib.transmission import send, receive
+from lib.transmission import send, receive, send_file
+
 
 class Server:
     def __init__(self, server_socket, dir_path):
@@ -15,16 +16,16 @@ class Server:
     def listen(self):
         print('[INFO] Server listo para recibir consultas')
         while True:
-            received_packet = receive(self.server_socket, self.secs_num_registry)
+            received_packet, client_address = receive(self.server_socket, self.secs_num_registry)
             if received_packet.ack:
                 continue
-            # if decoded_packet.get_fin():
-            #     self.clients_pending_upload.pop(client_address, None)
-            #     print('[INFO] Conexion finalizada lado server')
-            #     continue
+            if received_packet.get_fin():
+                self.clients_pending_upload.pop(client_address, None)
+                print('[INFO] Conexion finalizada lado server')
+                continue
 
             thread = threading.Thread(target=self.handle_message,
-                                      args=(decoded_packet,
+                                      args=(received_packet,
                                             client_address,
                                             ))
             thread.start()
@@ -33,10 +34,7 @@ class Server:
         print('[INFO] Conexion con ', client_address)
 
         if packet.get_is_download_query():
-            seq_num = self.send_file(self.server_socket, client_address, packet, self.dir_path)
-            end_pkt = Packet(seq_num + 1, True)
-            buff = pickle.dumps(end_pkt)
-            self.server_socket.sendto(buff, client_address)
+            send_file(self.server_socket, client_address, self.dir_path + '/' + packet.get_file_name(), self.secs_num_registry)
 
         elif packet.get_is_upload_query():
             open(self.dir_path + '/' + packet.get_file_name(), "w").close()
@@ -50,28 +48,6 @@ class Server:
             print(packet.get_seq_num())
             self.clients_pending_upload[client_address] = packet.get_seq_num()
             self.receive_file(packet, client_address, self.server_socket, self.dir_path)
-
-    def send_file(self, server_socket, client_address, client_pkt: Packet,
-                  dir_path: str):
-        print('[INFO] Descargando archivo...')
-        seq_num = 1
-
-        # mando ack
-        ack = Packet(seq_num, False)
-        buf = pickle.dumps(ack)
-        server_socket.sendto(buf, client_address)
-
-        print('[DEBUG] dir = ', dir_path + '/' + client_pkt.get_data())
-        file = open(dir_path + '/' + client_pkt.get_data(), 'r')
-        data = file.read()
-        file.close()
-        dwnl_pkt = Packet(seq_num + 1, False)
-        dwnl_pkt.insert_data(data)
-        dwnl_pkt.acknowledge(client_pkt.get_seq_num())
-        buf = pickle.dumps(dwnl_pkt)
-        server_socket.sendto(buf, client_address)
-
-        return seq_num
 
     def receive_file(self, packet, client_address, server_socket, dir_path):
         print('[INFO] Subiendo archivo...')
