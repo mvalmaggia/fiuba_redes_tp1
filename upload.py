@@ -28,10 +28,13 @@ group.add_argument('-q', '--quite', action='store_false',
 parser.add_argument('-H', '--host', metavar="ADDR", help="server IP address",
                     default="127.0.0.1")
 parser.add_argument('-p', '--port', help="server port", default=8000)
-# src es el archivo que se va a subir al servidor
+
 parser.add_argument('-s', '--src', metavar="FILEPATH", help="source file path",
-                    default=os.path.dirname(__file__) + '/data/uploads/test.txt')
-# file name es el nombre con el cual se va a guardar el archivo en el server_storage
+                    default=os.path.dirname(__file__) +
+                    '/data/uploads/test.txt')
+
+# file name es el nombre con el cual se va a guardar el archivo en el
+# server_storage
 parser.add_argument('-n', '--name', metavar="FILENAME", help="file name",
                     default="upload_test.txt")
 
@@ -81,17 +84,22 @@ def send_file(socket, file_path, file_name, udp_ip, udp_port):
                 data_packet.insert_data(file_content)
                 stop_n_wait(socket, data_packet, udp_ip, udp_port, seq_num)
 
-                file_content = file.read(PACKET_SIZE)              
+                file_content = file.read(PACKET_SIZE)
 
     except FileNotFoundError:
         print(f"File {file_path} not found")
         exit(1)
 
 
-def upload(udp_ip, udp_port, file_path, file_name): 
+def upload(udp_ip, udp_port, file_path, file_name):
+
+    if not os.path.isabs(file_path):
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(current_directory, file_path)
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    upload_query_packet = Packet(0, False, QueryType.UPLOAD, 
+    upload_query_packet = Packet(0, False, QueryType.UPLOAD,
                                  file_name=file_name)
 
     serialised_packet = pickle.dumps(upload_query_packet)
