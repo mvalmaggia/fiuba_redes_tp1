@@ -84,7 +84,7 @@ def send_file(socket, file_path, file_name, udp_ip, udp_port):
                 data_packet.insert_data(file_content)
                 stop_n_wait(socket, data_packet, udp_ip, udp_port, seq_num)
 
-                file_content = file.read(PACKET_SIZE)              
+                file_content = file.read(PACKET_SIZE)
 
     except FileNotFoundError:
         print(f"File {file_path} not found")
@@ -92,6 +92,11 @@ def send_file(socket, file_path, file_name, udp_ip, udp_port):
 
 
 def upload(udp_ip, udp_port, file_path, file_name):
+
+    if not os.path.isabs(file_path):
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(current_directory, file_path)
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     upload_query_packet = Packet(0, False, QueryType.UPLOAD,
