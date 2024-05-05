@@ -2,6 +2,8 @@ import threading
 import pickle
 
 from lib.packet import Packet
+from lib.sec_num_registry import SecNumberRegistry
+from lib.transmission import send
 
 
 class Server:
@@ -14,9 +16,7 @@ class Server:
     def listen(self):
         print('[INFO] Server listo para recibir consultas')
         while True:
-            # TODO: un mensaje que corte ejecucion del servidor
-            packet, client_address = self.server_socket.recvfrom(1024)
-            decoded_packet: Packet = pickle.loads(packet)
+            packet, client_address = self.receive_packet()
             if decoded_packet.get_fin():
                 self.clients_pending_upload.pop(client_address, None)
                 print('[INFO] Conexion finalizada lado server')
@@ -94,20 +94,10 @@ class Server:
         buf = pickle.dumps(ack_packet)
         server_socket.sendto(buf, client_address)
 
-
-class SecNumberRegistry:
-    def __init__(self):
-        self.sec_num_reg = {}
-        self.lock = threading.Lock()
-
-    def add_ack(self, sender_address, seq_num):
-        with self.lock:
-            if sender_address not in self.sec_num_reg:
-                self.sec_num_reg[sender_address] = []
-            self.sec_num_reg[sender_address].append(seq_num)
-
-    def check_ack(self, sender_address, seq_num):
-        with self.lock:
-            if sender_address not in self.sec_num_reg:
-                return False
-            return seq_num in self.sec_num_reg[sender_address]
+    def receive_packet(self):
+        """  Recibe un paquete y lo decodifica y si corresponde envia un ack
+        """
+        raw_packet, client_address = self.server_socket.recvfrom(1024)
+        packet: Packet = pickle.loads(raw_packet)
+        if packet.ack:
+            self.secs_num_registry.update_sec_num(client_address, packet.seq_num)
