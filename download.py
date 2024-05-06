@@ -3,6 +3,7 @@ import pickle
 import argparse
 from socket import AF_INET, SOCK_DGRAM, socket
 from lib.packet import Packet, QueryType
+from lib.retransmit_strategy import RetransmitStrategyInterface, GoBackN
 
 # Por defecto
 verbose = True
@@ -25,6 +26,9 @@ def main():
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
     file_path = os.path.dirname(__file__) + '/data/downloads'
+
+    # usamos una estrategia de retransmision hardcodeada
+    strategy = GoBackN(3)
 
     parser = argparse.ArgumentParser(
         description="Download a specified file from the server")
@@ -60,7 +64,7 @@ def main():
 
     print("[DEBUG] args= ", [verbose, server_host, server_port, file_path])
 
-    rcv_file(server_host, server_port, file_path, file_name)
+    rcv_file(server_host, server_port, file_path, file_name, strategy)
 
 
 def retrans_go_back_n():
@@ -71,9 +75,9 @@ def retrans_stop_n_wait():
     pass
 
 
-def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str):
+def rcv_file(server_host: str, server_port: int,
+             file_path: str, file_name: str, strategy: RetransmitStrategyInterface):
     client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind((server_host, server_port + 1))  # para prueba localhost
     packets = []
     seq_num = 1
 
@@ -82,35 +86,13 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
 
     # Creo paquete de consulta para bajar archivos
     query_packet = Packet(seq_num, False, QueryType.DOWNLOAD)
-    # Uso el modulo 'pickle' para poder guardar el paquete en 
-    # bytes y asi poder mandarlo
+
+    # Serializamos el paquete y lo mandamos a servidor
     query_packet.insert_data(file_name)
     buffer = pickle.dumps(query_packet)
     client_socket.sendto(buffer, (server_host, server_port))
 
-    while True:
-        encoded_packet, server_address = client_socket.recvfrom(
-            MAX_PACKET_SIZE)
-        decoded_packet = pickle.loads(encoded_packet)
-
-        print('[DEBUG] Paquete recibido: ')
-        print('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
-        print('[DEBUG]   ack: ', decoded_packet.get_ack())
-        print('[DEBUG]   fin: ', decoded_packet.get_fin())
-
-        if decoded_packet.get_fin():
-            print('[INFO] Conexion finalizada lado cliente')
-            break
-
-        # TODO: revisar con checksum que el paquete esta intacto
-        if decoded_packet.get_ack() != 0:
-            packets.append(decoded_packet)
-        # client_socket.sendto('ack', server_address)
-
-    # TODO: una vez conseguido el paquete completo -> terminar comunicacion
-    fin_pkt = Packet(seq_num + 1, True)
-    buffer = pickle.dumps(fin_pkt)
-    client_socket.sendto(buffer, (server_host, server_port))
+    packets = strategy.receive_packet(client_socket)
 
     client_socket.close()
     rebuild_file(packets, file_path, file_name)
