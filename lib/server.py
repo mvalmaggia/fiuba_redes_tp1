@@ -44,8 +44,8 @@ class Server:
 
         if packet.get_is_download_query():
             self.send_ack(client_address, packet.get_seq_num())
-            # send_file(self.server_socket, client_address, self.dir_path + '/' + packet.get_file_name(), self.secs_num_registry)
-            raise
+            send_file(self.server_socket, client_address, self.dir_path + '/' + packet.get_file_name(), packet.get_seq_num(),
+                      lambda seq_num: self.seq_nums_sent.get(client_address) == seq_num, 1, 5)
         elif packet.get_is_upload_query():
             file_path = self.dir_path + '/' + packet.get_file_name()
             open(file_path, "w").close()

@@ -1,3 +1,4 @@
+import select
 import socket
 import pickle
 import os
@@ -69,14 +70,12 @@ def upload(udp_ip, udp_port, file_path, file_name):
 
 
 def check_ack_client(sock, seq_num):
-    sock.settimeout(0)
-    try:
+    readable, _, _ = select.select([sock], [], [], 0)
+    if readable:
         packet, _ = sock.recvfrom(PACKET_SIZE)
         decoded_packet = pickle.loads(packet)
         if decoded_packet.ack and decoded_packet.seq_num == seq_num:
             return True
-    except:
-        pass
     return False
 
 

@@ -6,7 +6,7 @@ from lib.packet import Packet
 def send(server_socket, client_address, packet: Packet, check_ack, timeout=1, attempts=5) -> bool:
     if packet.ack:
         server_socket.sendto(pickle.dumps(packet), client_address)
-        print(f"Enviando ack al paquete {packet}")
+        print(f"Enviando ack {packet}")
         return True
 
     for i in range(attempts):
@@ -26,7 +26,7 @@ def receive(server_socket) -> (Packet, str):
     return decoded_packet, sender_address
 
 
-def send_file(server_socket, client_address, file_path, sec_num, check_ack, timeout=0.1, attempts=5):
+def send_file(server_socket, client_address, file_path, sec_num, check_ack, timeout=1, attempts=5):
     # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
     with open(file_path, "r") as file:
         file_content = file.read(1024)
