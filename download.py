@@ -78,7 +78,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     client_socket.setblocking(True)
     server_address = (server_host, server_port)
     seq_num_client = 0
-    packets = []
+    packets = {}
     function_check_ack = lambda sec_num_to_check: check_ack_client(client_socket, sec_num_to_check)
 
     print('[DEBUG] file_path = ', file_path)
@@ -97,19 +97,18 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
             ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
             send(client_socket, server_address, ack_packet, function_check_ack, 1, 5)
             break
-        if not decoded_packet.get_ack():
-            packets.append(decoded_packet)
-        else:
-            continue
-        ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
-        send(client_socket, server_address, ack_packet, function_check_ack, 1, 5)
+        if not decoded_packet.get_ack() and decoded_packet.get_seq_num() not in packets:
+            packets[decoded_packet.get_seq_num()] = decoded_packet
+            ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
+            send(client_socket, server_address, ack_packet, function_check_ack, 1, 5)
 
     fin_pkt = Packet(seq_num_client + 1, True)
     buffer = pickle.dumps(fin_pkt)
     client_socket.sendto(buffer, (server_host, server_port))
 
+    ordered_packets = [packets[seq] for seq in sorted(packets)]
+    rebuild_file(ordered_packets, file_path, file_name)
     client_socket.close()
-    rebuild_file(packets, file_path, file_name)
 
 
 def rebuild_file(packets: list, file_path: str, file_name: str):
