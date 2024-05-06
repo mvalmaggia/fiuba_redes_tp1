@@ -85,22 +85,23 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     print('[DEBUG] file_name = ', file_name)
     # Query
     query_packet = Packet(seq_num_client, False, QueryType.DOWNLOAD, file_name=file_name)
-    send(client_socket, server_address, query_packet, function_check_ack, 1, 5)
+    send(client_socket, server_address, query_packet, function_check_ack)
     while True:
         decoded_packet, _ = receive(client_socket)
         print('[DEBUG] Paquete recibido: ')
         print('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
         print('[DEBUG]   ack: ', decoded_packet.get_ack())
         print('[DEBUG]   fin: ', decoded_packet.get_fin())
+        # print('[DEBUG]   data: ', decoded_packet.get_data())
 
         if decoded_packet.get_fin():
             ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
-            send(client_socket, server_address, ack_packet, function_check_ack, 1, 5)
+            send(client_socket, server_address, ack_packet, function_check_ack)
             break
         if not decoded_packet.get_ack() and decoded_packet.get_seq_num() not in packets:
             packets[decoded_packet.get_seq_num()] = decoded_packet
             ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
-            send(client_socket, server_address, ack_packet, function_check_ack, 1, 5)
+            send(client_socket, server_address, ack_packet, function_check_ack)
 
     fin_pkt = Packet(seq_num_client + 1, True)
     buffer = pickle.dumps(fin_pkt)
@@ -114,7 +115,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
 def rebuild_file(packets: list, file_path: str, file_name: str):
     print('[INFO] Paquete recibido: ', packets[0].get_data())
     # TODO: faltaria ordenar los paquetes segun su sequence number
-    dwld_file = open(file_path + '/' + file_name, 'w')
+    dwld_file = open(file_path + '/' + file_name, 'wb')
     for file_pkt in packets:
         dwld_file.write(file_pkt.get_data())
     dwld_file.close()

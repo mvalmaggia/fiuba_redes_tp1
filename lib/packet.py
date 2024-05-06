@@ -14,7 +14,7 @@ class Packet:
     ack: bool
     fin: bool
     query_type: QueryType
-    data: str
+    data: bytes
 
     def __init__(self, seq_num, end_conection=False, query_type=None, file_name=None, ack=False):
         self.seq_num = seq_num
@@ -22,14 +22,14 @@ class Packet:
         self.ack = ack
         self.query_type = query_type
         self.file_name = file_name
-        self.data = ''
+        self.data = b''
 
     def acknowledge(self):
         self.ack = True
 
-    def insert_data(self, data: str):
-        if data.__sizeof__() < MAX_DATA_SIZE:
-            self.data = data
+    def insert_data(self, data: bytes):
+        # TODO: Hay que solucionar esto
+        self.data = data
 
     def generate_checksum(self):
         # TODO: revisar como hacer el checksum en UDP
@@ -60,4 +60,4 @@ class Packet:
         return self.file_name
 
     def __str__(self):
-        return f"Packet(seq_num={self.seq_num}, ack={self.ack}, fin={self.fin}, query_type={self.query_type}, data={self.data})"
+        return f"Packet(seq_num={self.seq_num}, ack={self.ack}, fin={self.fin}, query_type={self.query_type}, data_length={len(self.data)})"

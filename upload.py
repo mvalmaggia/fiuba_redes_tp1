@@ -68,9 +68,9 @@ def upload(udp_ip, udp_port, file_path, file_name):
                                  file_name=file_name)
     address = (udp_ip, udp_port)
     function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
-    send(sock, address, upload_query_packet, function_check_ack, 1, 5)
+    send(sock, address, upload_query_packet, function_check_ack)
     print("received ack after request, starting upload...")
-    send_file(sock, address, file_path, 1, function_check_ack, 1, 5)
+    send_file(sock, address, file_path, 1, function_check_ack)
     print("upload finished")
     send(sock, address, Packet(0, True), function_check_ack)
 
