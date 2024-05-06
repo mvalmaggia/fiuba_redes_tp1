@@ -26,7 +26,7 @@ class Timer:
 
         if self.start_time == 0.0:
 
-            raise TimerError(f"Timer is not running. Use '.start()' to start it")
+            return self.start_time
 
         return time.perf_counter() - self.start_time
 

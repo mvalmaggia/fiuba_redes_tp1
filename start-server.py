@@ -4,6 +4,8 @@ import threading
 import argparse
 from lib.packet import Packet
 import os
+from lib.retransmit_strategy import RetransmitStrategyInterface, GoBackN
+
 # Por defecto
 verbose = True
 
@@ -25,6 +27,9 @@ def main():
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
     dir_path = os.path.dirname(__file__) + '/data/server_storage'
+
+    # usamos una estrategia de retransmision hardcodeada
+    strategy = GoBackN(3)
 
     parser = argparse.ArgumentParser(
         description="Server capable of uploading/downloading uploads")
@@ -61,10 +66,10 @@ def main():
 
     print("[DEBUG] args= ", [verbose, server_host, server_port, dir_path])
 
-    listen(server_host, server_port, dir_path)
+    listen(server_host, server_port, dir_path, strategy)
 
 
-def listen(host_address: str, port: int, dir_path):
+def listen(host_address: str, port: int, dir_path, strategy: RetransmitStrategyInterface):
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((host_address, port))
     print('[INFO] Server listo para recibir consultas')
@@ -85,21 +90,22 @@ def listen(host_address: str, port: int, dir_path):
                                         client_address,
                                         server_socket,
                                         dir_path,
-                                        clients_pending_upload))
+                                        clients_pending_upload,
+                                        strategy))
         thread.start()
 
     server_socket.close()
 
 
 def handle_message(packet, client_address, server_socket, dir_path,
-                   clients_pending_upload):
+                   clients_pending_upload, strategy: RetransmitStrategyInterface):
     # TODO: el servidor puede recibir 2 tipos paquetes -> uno con data para el
     #       upload y otro de consulta para hacer un download
 
     print('[INFO] Conexion con ', client_address)
 
     if packet.get_is_download_query():
-        seq_num = send_file(server_socket, client_address, packet, dir_path)
+        seq_num = send_file(server_socket, client_address, packet, dir_path, strategy)
         end_pkt = Packet(seq_num + 1, True)
         buff = pickle.dumps(end_pkt)
         server_socket.sendto(buff, client_address)
@@ -120,25 +126,26 @@ def handle_message(packet, client_address, server_socket, dir_path,
 
 # devuelve el sequence number con el que termino de mandar el archivo
 def send_file(server_socket, client_address, client_pkt: Packet, 
-              dir_path: str):
+              dir_path: str, strategy: RetransmitStrategyInterface):
     print('[INFO] Descargando archivo...')
-    seq_num = 1
-
-    # mando ack
-    ack = Packet(seq_num, False)
-    buf = pickle.dumps(ack)
-    server_socket.sendto(buf, client_address)
+    # seq_num = 1
+    #
+    # # mando ack
+    # ack = Packet(seq_num, False)
+    # buf = pickle.dumps(ack)
+    # server_socket.sendto(buf, client_address)
 
     print('[DEBUG] dir = ', dir_path + '/' + client_pkt.get_data())
 
-    file = open(dir_path + '/' + client_pkt.get_data(), 'r')
-    data = file.read()
-    file.close()
-    dwnl_pkt = Packet(seq_num + 1, False)
-    dwnl_pkt.insert_data(data)
-    dwnl_pkt.acknowledge(client_pkt.get_seq_num())
-    buf = pickle.dumps(dwnl_pkt)
-    server_socket.sendto(buf, client_address)
+    file_path = dir_path + '/' + client_pkt.get_data()
+    # data = file.read()
+    seq_num = strategy.send_packets(server_socket, client_address, file_path)
+    # file.close()
+    # dwnl_pkt = Packet(seq_num + 1, False)
+    # dwnl_pkt.insert_data(data)
+    # dwnl_pkt.acknowledge(client_pkt.get_seq_num())
+    # buf = pickle.dumps(dwnl_pkt)
+    # server_socket.sendto(buf, client_address)
 
     return seq_num
 
