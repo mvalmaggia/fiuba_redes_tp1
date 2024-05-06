@@ -9,28 +9,20 @@ class SecNumberRegistry:
 
     def has(self, client_address, sec_num):
         with self.lock:
-            return self.ack_registry.get(client_address) is not None and sec_num in self.ack_registry[client_address]
+            print("[DEBUG] ACK REGISTRY: ", self.ack_registry)
+            return client_address in self.ack_registry and self.ack_registry[client_address] >= sec_num
 
-    def put(self, client_address, sec_num):
+    def set_ack(self, client_address, sec_num: int):
+        # Recibo el paquete sec_num
         with self.lock:
-            if client_address not in self.ack_registry:
-                self.ack_registry[client_address] = set()
-            self.ack_registry[client_address].add(sec_num)
+            # Si no está registrado o si está registrado y es el siguiente sec_num, se actualiza
+            if client_address not in self.ack_registry or self.ack_registry[client_address] + 1 == sec_num:
+                self.ack_registry[client_address] = sec_num
+                self.new_ack_event.set()
 
     def get_last_ack(self, client_address):
         with self.lock:
-            if client_address not in self.ack_registry:
-                return None
-            return max(self.ack_registry[client_address])
-
-    def get_acks(self, client_address):
-        with self.lock:
-            return set(self.ack_registry.get(client_address, set()))
-
-    def clear_acks(self, client_address):
-        with self.lock:
-            if client_address in self.ack_registry:
-                self.ack_registry[client_address].clear()
+            return self.ack_registry.get(client_address, 0)
 
     def wait_for_new_ack(self, timeout=None):
         self.new_ack_event.wait(timeout)

@@ -77,7 +77,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     client_socket.bind((server_host, server_port + 1))  # para prueba localhost
     client_socket.setblocking(True)
     server_address = (server_host, server_port)
-    seq_num_client = 0
+    seq_num_client = 1
     packets = {}
     function_check_ack = lambda sec_num_to_check: check_ack_client(client_socket, sec_num_to_check)
 

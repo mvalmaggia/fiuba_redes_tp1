@@ -70,7 +70,7 @@ def upload(udp_ip, udp_port, file_path, file_name):
     function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
     send(sock, address, upload_query_packet, function_check_ack)
     print("received ack after request, starting upload...")
-    send_file(sock, address, file_path, 1, function_check_ack)
+    send_file(sock, address, file_path, 2, function_check_ack)
     print("upload finished")
 
 
@@ -79,7 +79,7 @@ def check_ack_client(sock, seq_num):
     if readable:
         packet, _ = sock.recvfrom(PACKET_SIZE)
         decoded_packet = pickle.loads(packet)
-        if decoded_packet.ack and decoded_packet.seq_num == seq_num:
+        if decoded_packet.ack and decoded_packet.seq_num == seq_num + 1:
             return True
     return False
 
