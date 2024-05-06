@@ -2,6 +2,7 @@ import pickle
 from abc import ABC, abstractmethod
 from socket import AF_INET, SOCK_DGRAM, socket
 from packet import Packet
+from timer import Timer
 
 MAX_SEQ_NUM = 64
 
@@ -41,9 +42,20 @@ class GoBackN(RetransmitStrategyInterface):
         packets = extract_packets_from(file)
         self.last_ack_pkt = 0
 
+        timer = Timer()
+        timeout = 5.0
+
         while True:
             if self.last_ack_pkt == packets.__sizeof__():
                 break
+
+            # evento: timeout
+            if (timer.get_time() > timeout) or (self.repeated_acks >= 3):
+                timer.reset()
+                for pkt_idx in range(self.base_seq_num - 1, self.next_seq_num - 2):
+                    retrans_pkt = packets[pkt_idx]
+                    buf = pickle.dumps(retrans_pkt)
+                    sender_sock.sendto(buf, receiver_addr)
 
             # deja de enviar paquetes cuando llega al fin de 'packets'
             if self.next_seq_num <= packets.__sizeof__():
@@ -56,10 +68,8 @@ class GoBackN(RetransmitStrategyInterface):
                     sender_sock.sendto(buf, receiver_addr)
 
                     if self.base_seq_num == self.next_seq_num:
-                        print("Start timer")
+                        timer.start()
                     self.next_seq_num = self.next_seq_num + 1
-
-            # evento: timeout
 
             # evento: recibir ack
             ack_pkt = sender_sock.recvfrom(5000)
@@ -70,9 +80,9 @@ class GoBackN(RetransmitStrategyInterface):
                 self.repeated_acks = 0
                 self.base_seq_num = ack_pkt.get_ack() + 1
                 if self.base_seq_num == self.next_seq_num:
-                    print("Stop timer")
+                    timer.stop()
                 else:
-                    print("Start timer")
+                    timer.reset()
 
     def receive_packet(self):
         pass

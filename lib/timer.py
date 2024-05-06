@@ -30,6 +30,10 @@ class Timer:
 
         return time.perf_counter() - self.start_time
 
+    def reset(self):
+
+        self.start_time = time.perf_counter()
+
     def stop(self):
 
         """Stop the timer, and report the elapsed time"""
