@@ -45,7 +45,7 @@ class Server:
         if packet.get_is_download_query():
             self.send_ack(client_address, packet.get_seq_num())
             send_file(self.server_socket, client_address, self.dir_path + '/' + packet.get_file_name(), packet.get_seq_num(),
-                      lambda seq_num: self.seq_nums_sent.get(client_address) == seq_num)
+                      lambda seq_num: self.seq_nums_sent.get_last_ack(client_address) == seq_num)
         elif packet.get_is_upload_query():
             file_path = self.dir_path + '/' + packet.get_file_name()
             open(file_path, "w").close()
@@ -64,12 +64,12 @@ class Server:
         self.send_server(self.server_socket, client_address, ack_packet)
 
     def send_server(self, server_socket, client_address, packet):
-        send(server_socket, client_address, packet, lambda seq_num: self.seq_nums_sent.get(client_address) == seq_num)
+        send(server_socket, client_address, packet, lambda seq_num: self.seq_nums_sent.get_last_ack(client_address) == seq_num)
 
     def send_file_server(self, client_address, file_path):
-        initial_sec_num = self.seq_nums_sent.get(client_address)
+        initial_sec_num = self.seq_nums_sent.get_last_ack(client_address)
         send_file(self.server_socket, client_address, file_path, initial_sec_num,
-                  lambda seq_num: self.seq_nums_sent.get(client_address) == seq_num)
+                  lambda seq_num: self.seq_nums_sent.get_last_ack(client_address) == seq_num)
 
     def save_packet_in_file(self, packet: Packet, file_path):
         data = packet.get_data()
