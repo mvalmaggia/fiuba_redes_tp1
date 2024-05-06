@@ -128,24 +128,10 @@ def handle_message(packet, client_address, server_socket, dir_path,
 def send_file(server_socket, client_address, client_pkt: Packet, 
               dir_path: str, strategy: RetransmitStrategyInterface):
     print('[INFO] Descargando archivo...')
-    # seq_num = 1
-    #
-    # # mando ack
-    # ack = Packet(seq_num, False)
-    # buf = pickle.dumps(ack)
-    # server_socket.sendto(buf, client_address)
-
     print('[DEBUG] dir = ', dir_path + '/' + client_pkt.get_data())
 
     file_path = dir_path + '/' + client_pkt.get_data()
-    # data = file.read()
     seq_num = strategy.send_packets(server_socket, client_address, file_path)
-    # file.close()
-    # dwnl_pkt = Packet(seq_num + 1, False)
-    # dwnl_pkt.insert_data(data)
-    # dwnl_pkt.acknowledge(client_pkt.get_seq_num())
-    # buf = pickle.dumps(dwnl_pkt)
-    # server_socket.sendto(buf, client_address)
 
     return seq_num
 

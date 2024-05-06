@@ -1,7 +1,7 @@
 import pickle
 import sys
 from abc import ABC, abstractmethod
-from socket import AF_INET, SOCK_DGRAM, socket
+from socket import socket
 from lib.packet import Packet
 from lib.timer import Timer
 

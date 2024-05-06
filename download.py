@@ -94,30 +94,6 @@ def rcv_file(server_host: str, server_port: int,
 
     packets = strategy.receive_packet(client_socket)
 
-    # while True:
-    #     encoded_packet, server_address = client_socket.recvfrom(
-    #         MAX_PACKET_SIZE)
-    #     decoded_packet = pickle.loads(encoded_packet)
-    #
-    #     print('[DEBUG] Paquete recibido: ')
-    #     print('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
-    #     print('[DEBUG]   ack: ', decoded_packet.get_ack())
-    #     print('[DEBUG]   fin: ', decoded_packet.get_fin())
-    #
-    #     if decoded_packet.get_fin():
-    #         print('[INFO] Conexion finalizada lado cliente')
-    #         break
-    #
-    #     # TODO: revisar con checksum que el paquete esta intacto
-    #     if decoded_packet.get_ack() != 0:
-    #         packets.append(decoded_packet)
-    #     # client_socket.sendto('ack', server_address)
-    #
-    # # TODO: una vez conseguido el paquete completo -> terminar comunicacion
-    # fin_pkt = Packet(seq_num + 1, True)
-    # buffer = pickle.dumps(fin_pkt)
-    # client_socket.sendto(buffer, (server_host, server_port))
-
     client_socket.close()
     rebuild_file(packets, file_path, file_name)
 
