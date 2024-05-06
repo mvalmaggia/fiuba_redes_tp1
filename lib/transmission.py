@@ -1,20 +1,23 @@
 import time
 import pickle
-from packet import Packet
-from sec_num_registry import SecNumberRegistry
+from lib.packet import Packet
 
 
-def send(server_socket, client_address, packet: Packet, check_ack, timeout=0.1, attempts=5) -> bool:
-    server_socket.sendto(pickle.dumps(packet), client_address)
+def send(server_socket, client_address, packet: Packet, check_ack, timeout=1, attempts=5) -> bool:
     if packet.ack:
+        server_socket.sendto(pickle.dumps(packet), client_address)
+        print(f"Enviando ack al paquete {packet}")
         return True
 
-    for _ in range(attempts):
-        if check_ack(packet.seq_num):
-            return True
-        time.sleep(timeout)
+    for i in range(attempts):
         server_socket.sendto(pickle.dumps(packet), client_address)
-    return False
+        print(f"Paquete {packet.seq_num} enviado")
+        time.sleep(timeout)
+        if check_ack(packet.seq_num + 1):
+            print(f"Recibido ack para el paquete {packet.seq_num}")
+            return True
+        print(f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}")
+    raise TimeoutError("No se recibio ack para el paquete")
 
 
 def receive(server_socket) -> (Packet, str):
