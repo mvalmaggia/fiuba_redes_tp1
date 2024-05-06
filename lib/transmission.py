@@ -11,6 +11,7 @@ def send(server_socket, client_address, packet: Packet, check_ack, timeout=0.1, 
         return True
 
     for i in range(attempts):
+        print(f"Enviando paquete {packet.seq_num}")
         server_socket.sendto(pickle.dumps(packet), client_address)
         # print(f"Paquete enviado: {packet}")
         time.sleep(timeout)
@@ -34,7 +35,7 @@ def send_file(server_socket, client_address, file_path, sec_num, check_ack, time
         file_content = file.read(2048)
         # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
         while file_content:
-            sec_num += len(file_content)
+            sec_num += 1
             data_packet = Packet(sec_num, False)
             data_packet.insert_data(file_content)
             send(server_socket, client_address, data_packet, check_ack, timeout, attempts)

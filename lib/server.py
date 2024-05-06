@@ -31,6 +31,7 @@ class Server:
             if received_packet.get_fin():
                 self._clients_pending_upload.pop(client_address, None)
                 self.send_ack(client_address, received_packet.get_seq_num())
+                print('[INFO] Conexion con ', client_address, ' finalizada')
                 continue
 
             thread = threading.Thread(target=self.handle_message,
