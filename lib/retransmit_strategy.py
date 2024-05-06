@@ -71,7 +71,7 @@ class GoBackN(RetransmitStrategyInterface):
                     sender_sock.sendto(buf, receiver_addr)
 
             # deja de enviar paquetes cuando llega al fin de 'packets'
-            if self.last_ack_pkt < len(packets):
+            if self.next_seq_num <= len(packets):
 
                 # evento: mandado de paquetes dentro de la ventana
                 if self.next_seq_num < (self.base_seq_num + self.window):
@@ -84,23 +84,23 @@ class GoBackN(RetransmitStrategyInterface):
                         timer.start()
                     self.next_seq_num += 1
 
-                    # evento: recibir ack
-                    ack_pkt, receiver_addr = sender_sock.recvfrom(5000)
-                    decoded_ack_pkt = pickle.loads(ack_pkt)
-                    if decoded_ack_pkt.get_seq_num() == self.last_ack_pkt:
-                        print(f'[DEBUG] El paquete numero {decoded_ack_pkt.get_seq_num()} '
-                            f'todavia no se recibio')
-                        self.repeated_acks += 1
-                    else:
-                        print(f'[DEBUG] El paquete numero {decoded_ack_pkt.get_seq_num()} '
-                            f'fue recibido exitosamente')
-                        self.last_ack_pkt = decoded_ack_pkt.get_ack()
-                        self.repeated_acks = 0
-                        self.base_seq_num = decoded_ack_pkt.get_ack() + 1
-                        if self.base_seq_num == self.next_seq_num:
-                            timer.stop()
-                        else:
-                            timer.reset()
+            # evento: recibir ack
+            ack_pkt, receiver_addr = sender_sock.recvfrom(5000)
+            decoded_ack_pkt = pickle.loads(ack_pkt)
+            if decoded_ack_pkt.get_seq_num() == self.last_ack_pkt:
+                print(f'[DEBUG] El paquete numero {decoded_ack_pkt.get_seq_num()} '
+                        f'todavia no se recibio')
+                self.repeated_acks += 1
+            else:
+                print(f'[DEBUG] El paquete numero {decoded_ack_pkt.get_seq_num()} '
+                    f'fue recibido exitosamente')
+                self.last_ack_pkt = decoded_ack_pkt.get_seq_num()
+                self.repeated_acks = 0
+                self.base_seq_num = decoded_ack_pkt.get_seq_num() + 1
+                if self.base_seq_num == self.next_seq_num:
+                    timer.stop()
+                else:
+                    timer.reset()
 
         fin_pkt = Packet(self.next_seq_num, True)
         buffer = pickle.dumps(fin_pkt)

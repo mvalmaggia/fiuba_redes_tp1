@@ -78,7 +78,6 @@ def retrans_stop_n_wait():
 def rcv_file(server_host: str, server_port: int,
              file_path: str, file_name: str, strategy: RetransmitStrategyInterface):
     client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind((server_host, server_port + 1))  # para prueba localhost
     packets = []
     seq_num = 1
 
