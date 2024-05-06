@@ -75,3 +75,4 @@ class Server:
         data = packet.get_data()
         with open(file_path, "ab") as file:
             file.write(data)
+
