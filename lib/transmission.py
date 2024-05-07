@@ -5,7 +5,7 @@ from lib.sec_num_registry import SecNumberRegistry
 from lib.window import Window
 
 
-def send(server_socket, client_address, packet: Packet, check_ack, timeout=0.1, attempts=50) -> bool:
+def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack, timeout=0.1, attempts=50) -> bool:
     if packet.ack:
         server_socket.sendto(pickle.dumps(packet), client_address)
         print(f"Enviando ack {packet}")
@@ -38,30 +38,30 @@ def send_file(server_socket, client_address, file_path, start_sec_num, check_ack
         while file_content:
             data_packet = Packet(start_sec_num, False)
             data_packet.insert_data(file_content)
-            send(server_socket, client_address, data_packet, check_ack, timeout, attempts)
+            send_stop_n_wait(server_socket, client_address, data_packet, check_ack, timeout, attempts)
             file_content = file.read(2048)
             start_sec_num += 1
         # Se envia un paquete con el fin de la transmision
         fin_packet = Packet(start_sec_num, True)
-        send(server_socket, client_address, fin_packet, check_ack, timeout, attempts)
+        send_stop_n_wait(server_socket, client_address, fin_packet, check_ack, timeout, attempts)
 
 
 # Algoritmo de retransmision Go-Back-N
-def handle_acks_and_retransmissions(server_socket, window: Window, client_address, ack_registry, timeout=0.2):
+def handle_acks_and_retransmissions(server_socket, window: Window, client_address, ack_registry: SecNumberRegistry, timeout=0.2):
     while True:
-        ack_registry.wait_for_new_ack(timeout)  # Espera un nuevo ACK o timeout
-        recent_acks = ack_registry.get_acks(client_address)
+        ack_registry.wait_for_new_ack(client_address, timeout)  # Espera un nuevo ACK o timeout
+        last_ack = ack_registry.get_last_ack(client_address)
+        window.remove_confirmed(last_ack)
+        unacked_packets = window.get_unacked_packets()
+        for packet in unacked_packets:
+            server_socket.sendto(pickle.dumps(packet), client_address)
+            print(f"Reintentando enviar paquete {packet.seq_num}")
 
-        # Procesar y limpiar ACKs recibidos
-        if recent_acks:
-            for ack in recent_acks:
-                window.remove_confirmed(ack)
-                print(f"ACK recibido para el paquete {ack}, removiendo de la ventana")
-            ack_registry.clear_acks(client_address)  # Limpia los ACKs procesados
 
-        # Reenviar paquetes si es necesario
-        if not recent_acks:  # Si no se recibieron nuevos ACKs, reenviar
-            unacked_packets = window.get_unacked_packets()
-            for packet in unacked_packets:
-                server_socket.sendto(pickle.dumps(packet), client_address)
-                print(f"Reintentando enviar paquete {packet.seq_num}")
+def send_go_back_n(server_socket, client_address, packet: Packet, window: Window):
+    while not window.add_packet(packet):
+        print("La ventana está llena, esperando espacio...")
+        window.wait_for_space()
+
+    server_socket.sendto(pickle.dumps(packet), client_address)
+    print(f"Paquete enviado: {packet.seq_num}")

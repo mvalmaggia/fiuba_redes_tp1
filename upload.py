@@ -8,7 +8,7 @@ import argparse
 import logging as log
 
 from lib.sec_num_registry import SecNumberRegistry
-from lib.transmission import send, send_file
+from lib.transmission import send_stop_n_wait, send_file
 
 # upload [-h] [-v | -q] [-H ADDR ] [-p PORT ] [-s FILEPATH ] [-n FILENAME ]
 
@@ -68,7 +68,7 @@ def upload(udp_ip, udp_port, file_path, file_name):
                                  file_name=file_name)
     address = (udp_ip, udp_port)
     function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
-    send(sock, address, upload_query_packet, function_check_ack)
+    send_stop_n_wait(sock, address, upload_query_packet, function_check_ack)
     print("received ack after request, starting upload...")
     send_file(sock, address, file_path, 2, function_check_ack)
     print("upload finished")

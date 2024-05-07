@@ -4,7 +4,7 @@ import argparse
 from socket import AF_INET, SOCK_DGRAM, socket
 from lib.packet import Packet, QueryType
 from upload import check_ack_client
-from lib.transmission import send, receive
+from lib.transmission import send_stop_n_wait, receive
 # Por defecto
 verbose = True
 
@@ -85,7 +85,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     print('[DEBUG] file_name = ', file_name)
     # Query
     query_packet = Packet(seq_num_client, False, QueryType.DOWNLOAD, file_name=file_name)
-    send(client_socket, server_address, query_packet, function_check_ack)
+    send_stop_n_wait(client_socket, server_address, query_packet, function_check_ack)
     while True:
         decoded_packet, _ = receive(client_socket)
         print('[DEBUG] Paquete recibido: ')
@@ -96,12 +96,12 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
 
         if decoded_packet.get_fin():
             ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
-            send(client_socket, server_address, ack_packet, function_check_ack)
+            send_stop_n_wait(client_socket, server_address, ack_packet, function_check_ack)
             break
         if not decoded_packet.get_ack() and decoded_packet.get_seq_num() not in packets:
             packets[decoded_packet.get_seq_num()] = decoded_packet
             ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
-            send(client_socket, server_address, ack_packet, function_check_ack)
+            send_stop_n_wait(client_socket, server_address, ack_packet, function_check_ack)
 
     fin_pkt = Packet(seq_num_client + 1, True)
     buffer = pickle.dumps(fin_pkt)

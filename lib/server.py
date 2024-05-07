@@ -3,7 +3,8 @@ from enum import Enum
 
 from lib.packet import Packet
 from lib.sec_num_registry import SecNumberRegistry
-from lib.transmission import send, receive, send_file
+from lib.transmission import send_stop_n_wait, receive, send_file, handle_acks_and_retransmissions
+from lib.window import Window
 
 
 class AlgorithmType(Enum):
@@ -18,12 +19,14 @@ class Server:
         # Se puede despachar el ack, registrarlo y luego hacer polling para ver si se recibio el ack
         self.seq_nums_sent = SecNumberRegistry()
         self.seq_nums_recv = SecNumberRegistry()
-        self._clients_pending_upload = {}
+        self._clients = {}
         self.server_socket = server_socket
         self.dir_path = dir_path
+        self.algorithm = algorithm
 
     def listen(self):
         print('[INFO] Server listo para recibir consultas')
+
         while True:
             received_packet, client_address = receive(self.server_socket)
             print('[INFO] Paquete recibido: ', received_packet, ' de ', client_address)
@@ -36,7 +39,7 @@ class Server:
                 continue
             self.seq_nums_recv.set_ack(client_address, received_packet.get_seq_num())
             if received_packet.get_fin():
-                self._clients_pending_upload.pop(client_address, None)
+                self._clients.pop(client_address, None)
                 self.send_ack(client_address)
                 print('[INFO] Conexion con ', client_address, ' finalizada')
                 continue
@@ -57,11 +60,11 @@ class Server:
         elif packet.get_is_upload_query():
             file_path = self.dir_path + '/' + packet.get_file_name()
             open(file_path, "w").close()
-            self._clients_pending_upload[client_address] = file_path
+            self._clients[client_address] = file_path
             self.send_ack(client_address)
-        elif client_address in self._clients_pending_upload:
+        elif client_address in self._clients:
             # self.clients_pending_upload[client_address] = packet.get_seq_num()
-            file_path = self._clients_pending_upload[client_address]
+            file_path = self._clients[client_address]
             self.save_packet_in_file(packet, file_path)
             self.send_ack(client_address)
         else:
@@ -74,7 +77,7 @@ class Server:
         self.send_server(self.server_socket, client_address, ack_packet)
 
     def send_server(self, server_socket, client_address, packet):
-        send(server_socket, client_address, packet, lambda seq_num: self.seq_nums_sent.has(client_address, seq_num))
+        send_stop_n_wait(server_socket, client_address, packet, lambda seq_num: self.seq_nums_sent.has(client_address, seq_num))
 
     def send_file_server(self, client_address, file_path):
         initial_sec_num = self.seq_nums_sent.get_last_ack(client_address)
