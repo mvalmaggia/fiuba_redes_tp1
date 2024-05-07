@@ -146,7 +146,7 @@ def main():
     else:
         log.basicConfig(format="%(levelname)s: %(message)s")
 
-    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.GBN)
+    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.SW)
 
 
 if __name__ == "__main__":

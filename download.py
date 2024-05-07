@@ -78,6 +78,7 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     client_socket.setblocking(True)
     server_address = (server_host, server_port)
     seq_num_client = 1
+    seq_num_expected = 1
     packets = {}
     function_check_ack = lambda sec_num_to_check: check_ack_client(client_socket, sec_num_to_check)
 
@@ -93,7 +94,12 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
         print('[DEBUG]   ack: ', decoded_packet.get_ack())
         print('[DEBUG]   fin: ', decoded_packet.get_fin())
         # print('[DEBUG]   data: ', decoded_packet.get_data())
-
+        # Falta manejar cuando falta un paquete
+        if decoded_packet.get_seq_num() != seq_num_expected:
+            ack_packet = Packet(seq_num_expected, ack=True)
+            send_stop_n_wait(client_socket, server_address, ack_packet, function_check_ack)
+            continue
+        seq_num_expected += 1
         if decoded_packet.get_fin():
             ack_packet = Packet(decoded_packet.get_seq_num() + 1, ack=True)
             send_stop_n_wait(client_socket, server_address, ack_packet, function_check_ack)
