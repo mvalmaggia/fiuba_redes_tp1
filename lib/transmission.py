@@ -1,5 +1,7 @@
 import time
 import pickle
+import zlib
+
 from lib.packet import Packet
 
 
@@ -10,7 +12,7 @@ def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack, t
         return True
 
     for i in range(attempts):
-        print(f"Enviando paquete {packet.seq_num}")
+        # print(f"Enviando paquete {packet.seq_num}")
         server_socket.sendto(pickle.dumps(packet), client_address)
         # print(f"Paquete enviado: {packet}")
         time.sleep(timeout)
@@ -24,6 +26,22 @@ def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack, t
 def receive(server_socket) -> (Packet, str):
     packet, sender_address = server_socket.recvfrom(4096)
     decoded_packet: Packet = pickle.loads(packet)
+    print(f"Paquete recibido: {decoded_packet}")
+    # Validar que todos los atributos necesarios están presentes
+    required_attributes = ['seq_num', 'checksum', 'ack', 'fin', 'query_type', 'data']
+    for attr in required_attributes:
+        if not hasattr(decoded_packet, attr):
+            print(f"El paquete recibido no tiene el atributo {attr}")
+            raise AttributeError(f"El paquete recibido no tiene el atributo {attr}")
+
+    # Re-calculate the checksum of the received data
+    calculated_checksum = zlib.crc32(decoded_packet.data) & 0xffffffff
+
+    # Check if the recalculated checksum matches the one received
+    if calculated_checksum != decoded_packet.checksum:
+        print("Checksum does not match, data may be corrupted.")
+        raise ValueError("Checksum does not match, data may be corrupted.")
+
     return decoded_packet, sender_address
 
 

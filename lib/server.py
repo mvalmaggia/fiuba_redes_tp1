@@ -41,7 +41,7 @@ class Server:
 
         while True:
             packet, client_address = receive(self.server_socket)
-            print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
+            # print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
             if client_address in self.client_handlers and packet.ack:
                 if self.algorithm == AlgorithmType.SW:
                     self.seq_nums_sent.set_ack(client_address, packet.get_seq_num())
@@ -145,7 +145,7 @@ class Server:
             self.send_locking(client_address, packet)
             return True
         for i in range(attempts):
-            print(f"Enviando paquete {packet.seq_num}")
+            # print(f"Enviando paquete {packet.seq_num}")
             self.send_locking(client_address, packet)
             time.sleep(timeout)
             if self.seq_nums_sent.has(client_address, packet.seq_num):
@@ -178,7 +178,7 @@ class Server:
         while True:
             if packet.ack or window.try_add_packet(packet):
                 self.send_locking(client_address, packet)
-                print(f"Enviando paquete {packet} a {client_address}")
+                # print(f"Enviando paquete {packet} a {client_address}")
                 break
             else:
                 print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")

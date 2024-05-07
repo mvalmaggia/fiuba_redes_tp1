@@ -1,6 +1,8 @@
 from enum import Enum
+import zlib
 
-MAX_DATA_SIZE = 1400
+
+MAX_DATA_SIZE = 2048
 
 
 class QueryType(Enum):
@@ -23,17 +25,19 @@ class Packet:
         self.query_type = query_type
         self.file_name = file_name
         self.data = b''
+        self.checksum = self.generate_checksum()
 
     def acknowledge(self):
         self.ack = True
 
     def insert_data(self, data: bytes):
-        # TODO: Hay que solucionar esto
+        if len(data) > MAX_DATA_SIZE:
+            raise ValueError("Data size exceeds the maximum allowed size.")
         self.data = data
+        self.checksum = self.generate_checksum()
 
     def generate_checksum(self):
-        # TODO: revisar como hacer el checksum en UDP
-        self.checksum = hash(self)
+        return zlib.crc32(self.data) & 0xffffffff
 
     def get_data(self):
         return self.data
@@ -60,4 +64,4 @@ class Packet:
         return self.file_name
 
     def __str__(self):
-        return f"Packet(seq_num={self.seq_num}, ack={self.ack}, fin={self.fin}, query_type={self.query_type}, data_length={len(self.data)})"
+        return f"Packet(seq_num={self.seq_num}, ack={self.ack}, fin={self.fin}, query_type={self.query_type}, data_length={len(self.data)}), checksum={self.checksum})"

@@ -15,7 +15,7 @@ class Window:
     def try_add_packet(self, packet):
         with self.lock:
             if len(self.packets) < self.size:
-                print(f"Paquete {packet.seq_num} agregado, ventana largo: {len(self.packets)}")
+                # print(f"Paquete {packet.seq_num} agregado, ventana largo: {len(self.packets)}")
                 self.packets.append(packet)
                 self.restart_timer()
                 return True
@@ -49,7 +49,7 @@ class Window:
         with self.condition:
             self.condition.wait_for(lambda: not self.packets)
             print("La ventana ahora está vacía.")
-
-        self.timer.cancel()
-        self.timer.join()
-        print("Temporizador detenido")
+        if self.timer:
+            self.timer.cancel()
+            self.timer.join()
+            print("Temporizador detenido")

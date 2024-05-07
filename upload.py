@@ -12,7 +12,7 @@ import argparse
 import logging as log
 
 from lib.sec_num_registry import SecNumberRegistry
-from lib.transmission import send_stop_n_wait, send_file_sw
+from lib.transmission import send_stop_n_wait, send_file_sw, receive
 from lib.window import Window
 
 # upload [-h] [-v | -q] [-H ADDR ] [-p PORT ] [-s FILEPATH ] [-n FILENAME ]
@@ -60,8 +60,7 @@ def window_manager(window: Window, sock):
     # Si hay un nuevo ack, limpia los paquetes de la ventana y reinicio el temporizador
     # Como corre en un nuevo hilo, se queda esperando a que llegue un ack
     while True:
-        packet, _ = sock.recvfrom(PACKET_SIZE)
-        decoded_packet: Packet = pickle.loads(packet)
+        decoded_packet, _ = receive(sock)
         if decoded_packet.get_ack():
             print(f"Se recibio el paquete: {decoded_packet.seq_num - 1}")
             window.remove_confirmed(decoded_packet.seq_num)
@@ -92,7 +91,7 @@ def send_gbn(sock, client_address, packet, window):
     while True:
         if packet.ack or window.try_add_packet(packet):
             sock.sendto(pickle.dumps(packet), client_address)
-            print(f"Enviando paquete {packet.seq_num} a {client_address}")
+            # print(f"Enviando paquete {packet.seq_num} a {client_address}")
             break
         else:
             print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
@@ -101,7 +100,7 @@ def send_gbn(sock, client_address, packet, window):
 
 def send_straightforward(sock, client_address, packet):
     sock.sendto(pickle.dumps(packet), client_address)
-    print(f"Enviando paquete {packet.seq_num} a {client_address}")
+    # print(f"Enviando paquete {packet.seq_num} a {client_address}")
 
 
 def check_ack_client(sock, seq_num):
