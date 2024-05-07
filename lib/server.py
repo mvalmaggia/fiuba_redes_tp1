@@ -78,7 +78,7 @@ class Server:
             packet = client_queue.get()
 
             if packet.get_fin():
-                self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
+                self.send_gbn(client_address, Packet(packet.seq_num + 1, end_conection=True, ack=True), window)
                 print('[INFO] Conexion con ', client_address, ' finalizada')
                 break
             self.process_packet_gbn(packet, client_address, window)
@@ -177,7 +177,7 @@ class Server:
         while True:
             if packet.ack or window.try_add_packet(packet):
                 self.send_locking(client_address, packet)
-                print(f"Enviando paquete {packet.seq_num} a {client_address}")
+                print(f"Enviando paquete {packet} a {client_address}")
                 break
             else:
                 print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
