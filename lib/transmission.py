@@ -29,7 +29,7 @@ def receive(server_socket) -> (Packet, str):
     return decoded_packet, sender_address
 
 
-def send_file(server_socket, client_address, file_path, start_sec_num, check_ack, timeout=1, attempts=5):
+def send_file_sw(server_socket, client_address, file_path, start_sec_num, check_ack, timeout=1, attempts=5, algorithm="SW"):
     print(f"Enviando archivo {file_path}")
     # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
     with open(file_path, "rb") as file:
@@ -46,19 +46,25 @@ def send_file(server_socket, client_address, file_path, start_sec_num, check_ack
         send_stop_n_wait(server_socket, client_address, fin_packet, check_ack, timeout, attempts)
 
 
-# Algoritmo de retransmision Go-Back-N
-def handle_acks_and_retransmissions(server_socket, window: Window, client_address, ack_registry: SecNumberRegistry, timeout=0.2):
-    while True:
-        ack_registry.wait_for_new_ack(client_address, timeout)  # Espera un nuevo ACK o timeout
-        last_ack = ack_registry.get_last_ack(client_address)
-        window.remove_confirmed(last_ack)
-        unacked_packets = window.get_unacked_packets()
-        for packet in unacked_packets:
-            server_socket.sendto(pickle.dumps(packet), client_address)
-            print(f"Reintentando enviar paquete {packet.seq_num}")
+# Algoritmos de retransmision Go-Back-N
+def send_file_gbn(server_socket, client_address, file_path, start_sec_num, window: Window):
+    print(f"Enviando archivo {file_path}")
+    # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
+    with open(file_path, "rb") as file:
+        file_content = file.read(2048)
+        # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
+        while file_content:
+            data_packet = Packet(start_sec_num, False)
+            data_packet.insert_data(file_content)
+            send_gbn(server_socket, client_address, data_packet, window)
+            file_content = file.read(2048)
+            start_sec_num += 1
+        # Se envia un paquete
+        fin_packet = Packet(start_sec_num, True)
+        send_gbn(server_socket, client_address, fin_packet, window)
 
 
-def send_go_back_n(server_socket, client_address, packet: Packet, window: Window):
+def send_gbn(server_socket, client_address, packet: Packet, window: Window):
     while not window.add_packet(packet):
         print("La ventana está llena, esperando espacio...")
         window.wait_for_space()

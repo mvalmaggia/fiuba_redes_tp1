@@ -43,9 +43,10 @@ def main():
     parser.add_argument("-p", "--port", help="server port number",
                         required=False, type=int)
     parser.add_argument("-d", "--dst", help="destination file path",
-                        required=False, type=str)
-    parser.add_argument("-n", "--file_name", help="file name", default='upload_test.txt',
                         required=True, type=str)
+    parser.add_argument("-n", "--file_name", help="file name",
+                        required=True, type=str)
+    print('Se va a ejecutar el parser')
 
     args = parser.parse_args()
 
@@ -74,7 +75,7 @@ def retrans_stop_n_wait():
 
 def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str):
     client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind((server_host, server_port + 1))  # para prueba localhost
+    # client_socket.bind((server_host, server_port + 1))  # para prueba localhost
     client_socket.setblocking(True)
     server_address = (server_host, server_port)
     seq_num_client = 1
@@ -108,14 +109,14 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     client_socket.sendto(buffer, (server_host, server_port))
 
     ordered_packets = [packets[seq] for seq in sorted(packets)]
-    rebuild_file(ordered_packets, file_path, file_name)
+    rebuild_file(ordered_packets, file_path)
     client_socket.close()
 
 
-def rebuild_file(packets: list, file_path: str, file_name: str):
+def rebuild_file(packets: list, file_path: str):
     print('[INFO] Paquete recibido: ', packets[0].get_data())
     # TODO: faltaria ordenar los paquetes segun su sequence number
-    dwld_file = open(file_path + '/' + file_name, 'wb')
+    dwld_file = open(file_path, 'wb')
     for file_pkt in packets:
         dwld_file.write(file_pkt.get_data())
     dwld_file.close()
