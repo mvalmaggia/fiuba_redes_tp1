@@ -69,7 +69,7 @@ def window_manager(window: Window, sock):
         if decoded_packet.get_fin():
             print("Fin de la transmision")
             break
-    window.wait_until_empty()
+    window.close_window()
 
 def send_file_gbn(sock, client_address, file_path, start_sec_num, window: Window):
     print(f"Enviando archivo {file_path}")

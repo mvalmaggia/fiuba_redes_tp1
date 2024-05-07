@@ -44,8 +44,12 @@ class Window:
             if not self.packets:
                 self.condition.notify_all()  # Notifica a los hilos esperando que la ventana está vacía
 
-    def wait_until_empty(self):
+    def close_window(self):
         """Solo utilizar cuando se está seguro de que la ventana se va a vaciar."""
         with self.condition:
             self.condition.wait_for(lambda: not self.packets)
             print("La ventana ahora está vacía.")
+
+        self.timer.cancel()
+        self.timer.join()
+        print("Temporizador detenido")
