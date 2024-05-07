@@ -2,32 +2,39 @@ import threading
 
 
 class Window:
-    def __init__(self, size):
+    def __init__(self, size, client_address, send_function):
         self.size = size
         self.packets = []
         self.lock = threading.Lock()
-        self.space_available = threading.Event()
-        self.space_available.set()  # Inicialmente, hay espacio disponible.
+        self.timer = None
+        self.timeout_interval = 3
+        self.send_function = send_function
+        self.client_address = client_address
 
-    def add_packet(self, packet):
+    def try_add_packet(self, packet):
         with self.lock:
             if len(self.packets) < self.size:
+                print(f"Paquete agregado, ventana largo: {len(self.packets)}")
                 self.packets.append(packet)
+                self.restart_timer()
                 return True
             return False
 
+    def restart_timer(self):
+        # Cancela el temporizador anterior si existe
+        if self.timer:
+            self.timer.cancel()
+        self.timer = threading.Timer(self.timeout_interval, self.retransmit_unacknowledged_packets)
+        self.timer.start()
+
+    def retransmit_unacknowledged_packets(self):
+        # Suponiendo que retransmite todos los paquetes no confirmados
+        with self.lock:
+            for packet in self.packets:
+                print(f"Retransmitiendo paquete {packet.seq_num}")
+                self.send_function(self.client_address, packet)
+
     def remove_confirmed(self, ack_num):
+        # Elimina paquetes confirmados de la ventana
         with self.lock:
-            initial_length = len(self.packets)
             self.packets = [pkt for pkt in self.packets if pkt.seq_num > ack_num]
-            if len(self.packets) < initial_length:
-                self.space_available.set()  # Hay espacio disponible después de eliminar paquetes.
-
-    def wait_for_space(self):
-        self.space_available.wait()  # Espera hasta que haya espacio disponible.
-        self.space_available.clear()  # Reinicia el estado para futuras esperas.
-
-    def get_unacked_packets(self):
-        """Obtiene una copia de la lista de paquetes no confirmados."""
-        with self.lock:
-            return list(self.packets)

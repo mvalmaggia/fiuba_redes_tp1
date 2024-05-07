@@ -1,8 +1,6 @@
 import time
 import pickle
 from lib.packet import Packet
-from lib.sec_num_registry import SecNumberRegistry
-from lib.window import Window
 
 
 def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack, timeout=0.1, attempts=50) -> bool:
@@ -44,30 +42,3 @@ def send_file_sw(server_socket, client_address, file_path, start_sec_num, check_
         # Se envia un paquete con el fin de la transmision
         fin_packet = Packet(start_sec_num, True)
         send_stop_n_wait(server_socket, client_address, fin_packet, check_ack, timeout, attempts)
-
-
-# Algoritmos de retransmision Go-Back-N
-def send_file_gbn(server_socket, client_address, file_path, start_sec_num, window: Window):
-    print(f"Enviando archivo {file_path}")
-    # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
-    with open(file_path, "rb") as file:
-        file_content = file.read(2048)
-        # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
-        while file_content:
-            data_packet = Packet(start_sec_num, False)
-            data_packet.insert_data(file_content)
-            send_gbn(server_socket, client_address, data_packet, window)
-            file_content = file.read(2048)
-            start_sec_num += 1
-        # Se envia un paquete
-        fin_packet = Packet(start_sec_num, True)
-        send_gbn(server_socket, client_address, fin_packet, window)
-
-
-def send_gbn(server_socket, client_address, packet: Packet, window: Window):
-    while not window.add_packet(packet):
-        print("La ventana está llena, esperando espacio...")
-        window.wait_for_space()
-
-    server_socket.sendto(pickle.dumps(packet), client_address)
-    print(f"Paquete enviado: {packet.seq_num}")

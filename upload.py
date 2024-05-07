@@ -3,6 +3,9 @@ import socket
 import pickle
 import os
 import sys
+import threading
+import time
+
 from lib.packet import Packet, QueryType
 from lib.server import AlgorithmType
 import argparse
@@ -10,6 +13,7 @@ import logging as log
 
 from lib.sec_num_registry import SecNumberRegistry
 from lib.transmission import send_stop_n_wait, send_file_sw
+from lib.window import Window
 
 # upload [-h] [-v | -q] [-H ADDR ] [-p PORT ] [-s FILEPATH ] [-n FILENAME ]
 
@@ -25,7 +29,7 @@ PACKET_SIZE = 1024
 TIMEOUT = 5
 
 
-def upload(udp_ip, udp_port, file_path, file_name):
+def upload(udp_ip, udp_port, file_path, file_name, algorithm=AlgorithmType.GBN):
     if not os.path.isabs(file_path):
         current_directory = os.path.dirname(os.path.realpath(__file__))
         file_path = os.path.join(current_directory, file_path)
@@ -34,11 +38,60 @@ def upload(udp_ip, udp_port, file_path, file_name):
     upload_query_packet = Packet(1, False, QueryType.UPLOAD,
                                  file_name=file_name)
     address = (udp_ip, udp_port)
-    function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
-    send_stop_n_wait(sock, address, upload_query_packet, function_check_ack)
-    print("received ack after request, starting upload...")
-    send_file_sw(sock, address, file_path, 2, function_check_ack, algorithm=AlgorithmType.SW)
+    if algorithm == AlgorithmType.SW:
+        function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
+        send_stop_n_wait(sock, address, upload_query_packet, function_check_ack)
+        print("received ack after request, starting upload...")
+        send_file_sw(sock, address, file_path, 2, function_check_ack, algorithm=AlgorithmType.SW)
+    else:
+        window = Window(4, address, lambda client_address, packet: send_gbn(sock, client_address, packet, window))
+        thread_window_manager = threading.Thread(target=window_manager, args=(window, sock))
+        thread_window_manager.start()
+        send_gbn(sock, address, upload_query_packet, window)
+        print("received ack after request, starting upload...")
+        send_file_gbn(sock, address, file_path, 2, window)
+
     print("upload finished")
+
+
+def window_manager(window: Window, sock):
+    # Si hay un nuevo ack, limpia los paquetes de la ventana y reinicio el temporizador
+    # Como corre en un nuevo hilo, se queda esperando a que llegue un ack
+    while True:
+        packet, _ = sock.recvfrom(PACKET_SIZE)
+        decoded_packet = pickle.loads(packet)
+        if decoded_packet.ack:
+            window.remove_confirmed(decoded_packet.seq_num)
+            window.restart_timer()
+
+
+def send_file_gbn(sock, client_address, file_path, start_sec_num, window: Window):
+    print(f"Enviando archivo {file_path}")
+    # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
+    with open(file_path, "rb") as file:
+        file_content = file.read(2048)
+        # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
+        while file_content:
+            data_packet = Packet(start_sec_num, False)
+            data_packet.insert_data(file_content)
+            send_gbn(sock, client_address, data_packet, window)
+            file_content = file.read(2048)
+            start_sec_num += 1
+        # Se envia un paquete
+        fin_packet = Packet(start_sec_num, True)
+        send_gbn(sock, client_address, fin_packet, window)
+
+
+def send_gbn(sock, client_address, packet, window):
+    while True:
+        if packet.ack or window.try_add_packet(packet):
+            sock.sendto(pickle.dumps(packet), client_address)
+            print(f"Enviando paquete {packet.seq_num} a {client_address}")
+            break
+        else:
+            print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
+            # TODO: Implementar un mecanismo de espera más eficiente (eventos)
+            time.sleep(0.5)  # Espera activa, considerar usar un mecanismo de espera más eficiente
 
 
 def check_ack_client(sock, seq_num):
@@ -84,7 +137,7 @@ def main():
     else:
         log.basicConfig(format="%(levelname)s: %(message)s")
 
-    upload(UDP_IP, UDP_PORT, args.src, args.name)
+    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.GBN)
 
 
 if __name__ == "__main__":

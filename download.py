@@ -25,7 +25,7 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    file_path = os.path.dirname(__file__) + '/data/downloads'
+    file_path = os.path.dirname(__file__) + '/data/downloads/downloaded_file.txt'
 
     parser = argparse.ArgumentParser(
         description="Download a specified file from the server")
@@ -42,8 +42,7 @@ def main():
                         required=False, type=str)
     parser.add_argument("-p", "--port", help="server port number",
                         required=False, type=int)
-    parser.add_argument("-d", "--dst", help="destination file path",
-                        required=True, type=str)
+    parser.add_argument("-d", "--dst", help="destination file path", type=str)
     parser.add_argument("-n", "--file_name", help="file name",
                         required=True, type=str)
     print('Se va a ejecutar el parser')
