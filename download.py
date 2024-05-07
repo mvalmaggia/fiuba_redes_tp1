@@ -89,12 +89,13 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     send_stop_n_wait(client_socket, server_address, query_packet, function_check_ack)
     while True:
         decoded_packet, _ = receive(client_socket)
-        print('[DEBUG] Paquete recibido: ')
-        print('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
-        print('[DEBUG]   ack: ', decoded_packet.get_ack())
-        print('[DEBUG]   fin: ', decoded_packet.get_fin())
+        print(f'[DEBUG] Paquete recibido: {decoded_packet}')
+        # print('[DEBUG] Paquete recibido: ')
+        # print('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
+        # print('[DEBUG]   ack: ', decoded_packet.get_ack())
+        # print('[DEBUG]   fin: ', decoded_packet.get_fin())
         # print('[DEBUG]   data: ', decoded_packet.get_data())
-        # Falta manejar cuando falta un paquete
+        print(f'[DEBUG] Paquetes al momento: {packets.keys()}')
         if decoded_packet.get_seq_num() != seq_num_expected:
             ack_packet = Packet(seq_num_expected, ack=True)
             send_stop_n_wait(client_socket, server_address, ack_packet, function_check_ack)

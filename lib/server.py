@@ -180,7 +180,7 @@ class Server:
         while True:
             if packet.ack or window.try_add_packet(packet):
                 self.send_locking(client_address, packet)
-                # print(f"Enviando paquete {packet} a {client_address}")
+                print(f"Enviando paquete {packet}")
                 break
             else:
                 print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")

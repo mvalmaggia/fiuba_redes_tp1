@@ -4,6 +4,7 @@ import threading
 class Window:
     def __init__(self, size, client_address, send_function):
         self.size = size
+        # Lista de paquetes sin ack
         self.packets = []
         self.lock = threading.Lock()
         self.timer = None
@@ -40,7 +41,7 @@ class Window:
     def remove_confirmed(self, ack_num):
         # Elimina paquetes confirmados de la ventana
         with self.lock:
-            self.packets = [pkt for pkt in self.packets if pkt.seq_num > ack_num]
+            self.packets = [pkt for pkt in self.packets if pkt.seq_num >= ack_num]
             if not self.packets:
                 self.condition.notify_all()  # Notifica a los hilos esperando que la ventana está vacía
 
@@ -53,3 +54,4 @@ class Window:
             self.timer.cancel()
             self.timer.join()
             print("Temporizador detenido")
+

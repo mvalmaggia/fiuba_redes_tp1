@@ -12,9 +12,8 @@ def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack, t
         return True
 
     for i in range(attempts):
-        # print(f"Enviando paquete {packet.seq_num}")
         server_socket.sendto(pickle.dumps(packet), client_address)
-        # print(f"Paquete enviado: {packet}")
+        print(f"Paquete enviado: {packet}")
         time.sleep(timeout)
         if check_ack(packet.seq_num):
             print(f"Recibido ack para el paquete {packet.seq_num}")
