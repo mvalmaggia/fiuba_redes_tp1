@@ -82,6 +82,7 @@ class Server:
                 print('[INFO] Conexion con ', client_address, ' finalizada')
                 break
             self.process_packet_gbn(packet, client_address, window)
+        window.close_window()
 
     def process_packet_gbn(self, packet, client_address, window: Window):
         if packet.get_is_download_query():
