@@ -44,12 +44,13 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm=AlgorithmType.GBN):
         print("received ack after request, starting upload...")
         send_file_sw(sock, address, file_path, 2, function_check_ack, algorithm=AlgorithmType.SW)
     else:
-        window = Window(4, address, lambda client_address, packet: send_straightforward(sock, client_address, packet))
+        window = Window(20, address, lambda client_address, packet: send_straightforward(sock, client_address, packet))
         thread_window_manager = threading.Thread(target=window_manager, args=(window, sock))
         thread_window_manager.start()
         send_gbn(sock, address, upload_query_packet, window)
         print("received ack after request, starting upload...")
         send_file_gbn(sock, address, file_path, 2, window)
+        window.close_window()
         thread_window_manager.join()
 
 
@@ -62,9 +63,8 @@ def window_manager(window: Window, sock):
     while True:
         decoded_packet, _ = receive(sock)
         if decoded_packet.get_ack():
-            print(f"Se recibio el paquete: {decoded_packet.seq_num - 1}")
+            print(f"Se recibio el paquete: {decoded_packet}")
             window.remove_confirmed(decoded_packet.seq_num)
-            window.restart_timer()
         if decoded_packet.get_fin():
             print("Fin de la transmision")
             break
@@ -82,16 +82,18 @@ def send_file_gbn(sock, client_address, file_path, start_sec_num, window: Window
             send_gbn(sock, client_address, data_packet, window)
             file_content = file.read(2048)
             start_sec_num += 1
+        window.wait_for_empty_window()
         # Se envia un paquete
         fin_packet = Packet(start_sec_num, True)
         send_gbn(sock, client_address, fin_packet, window)
+
 
 
 def send_gbn(sock, client_address, packet, window):
     while True:
         if packet.ack or window.try_add_packet(packet):
             sock.sendto(pickle.dumps(packet), client_address)
-            # print(f"Enviando paquete {packet.seq_num} a {client_address}")
+            print(f"Enviando paquete {packet.seq_num} a {client_address}")
             break
         else:
             print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
@@ -146,7 +148,7 @@ def main():
     else:
         log.basicConfig(format="%(levelname)s: %(message)s")
 
-    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.SW)
+    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.GBN)
 
 
 if __name__ == "__main__":

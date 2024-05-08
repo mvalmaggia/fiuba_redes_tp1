@@ -41,7 +41,7 @@ class Server:
 
         while True:
             packet, client_address = receive(self.server_socket)
-            # print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
+            print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
             if client_address in self.client_handlers and packet.ack:
                 if self.algorithm == AlgorithmType.SW:
                     self.seq_nums_sent.set_ack(client_address, packet.get_seq_num())
@@ -76,6 +76,11 @@ class Server:
         print('Utilizando GBN para cliente ', client_address)
         while True:
             packet = client_queue.get()
+            if self.seq_nums_recv.has(client_address, packet.get_seq_num()):
+                print(f"[INFO] Paquete {packet.get_seq_num()} ya fue recibido, descartando")
+                self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
+                continue
+            self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
 
             if packet.get_fin():
                 self.send_gbn(client_address, Packet(packet.seq_num + 1, end_conection=True, ack=True), window)
@@ -95,9 +100,11 @@ class Server:
             self._clients_pending_upload[client_address] = file_path
             self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
         elif client_address in self._clients_pending_upload:
-            # Aca hay que verificar tambien si el paquete es el que necesito
-            file_path = self._clients_pending_upload[client_address]
-            self.save_packet_in_file(packet, file_path)
+            last_seq_num = self.seq_nums_recv.get_last_ack(client_address)
+            print(f'Seq num recibido: {packet.get_seq_num()} y el ultimo seq num recibido es {last_seq_num}')
+            if packet.get_seq_num() == last_seq_num:
+                file_path = self._clients_pending_upload[client_address]
+                self.save_packet_in_file(packet, file_path)
             self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
         else:
             print('[ERROR] Query no reconocida')
@@ -107,7 +114,7 @@ class Server:
         while True:
             packet = client_queue.get()  # Bloquea hasta que hay un paquete en la cola
             if self.seq_nums_recv.has(client_address, packet.get_seq_num()):
-                print("[INFO] Paquete ya recibido")
+                print(f"[INFO] Paquete {packet.get_seq_num()} ya fue recibido, descartando")
                 self.send_ack_sw(client_address)
                 continue
             self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
@@ -130,8 +137,10 @@ class Server:
             self.send_ack_sw(client_address)
         elif client_address in self._clients_pending_upload:
             # Verifico si es el paquete necesito.
-            file_path = self._clients_pending_upload[client_address]
-            self.save_packet_in_file(packet, file_path)
+            last_seq_num = self.seq_nums_recv.get_last_ack(client_address)
+            if packet.get_seq_num() == last_seq_num:
+                file_path = self._clients_pending_upload[client_address]
+                self.save_packet_in_file(packet, file_path)
             self.send_ack_sw(client_address)
         else:
             print('[ERROR] Query no reconocida')
@@ -142,7 +151,7 @@ class Server:
         ack_packet = Packet(last_ack + 1, ack=True)
         self.send_sw(client_address, ack_packet)
 
-    def send_sw(self, client_address, packet: Packet, timeout=0.1, attempts=5):
+    def send_sw(self, client_address, packet: Packet, timeout=0.1, attempts=50):
         print(f"Enviando paquete {packet}")
         if packet.ack:
             self.send_locking(client_address, packet)
@@ -150,13 +159,14 @@ class Server:
         for i in range(attempts):
             self.send_locking(client_address, packet)
             time.sleep(timeout)
-            if self.seq_nums_sent.has(client_address, packet.seq_num):
+            # print(f'Esperando ack para paquete {packet.seq_num} y el ultimo ack es {self.seq_nums_sent.get_last_ack(client_address)}')
+            if self.seq_nums_sent.get_last_ack(client_address) > packet.seq_num:
                 print(f"Recibido ack para el paquete {packet.seq_num}")
                 return True
             print(f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}")
         raise TimeoutError("No se recibio ack para el paquete")
 
-    def send_file_sw(self, client_address, file_path, start_sec_num, timeout=0.1, attempts=5):
+    def send_file_sw(self, client_address, file_path, start_sec_num, timeout=0.1, attempts=50):
         print(f"Enviando archivo {file_path}")
         # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
         with open(file_path, "rb") as file:

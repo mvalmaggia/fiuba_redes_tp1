@@ -3,14 +3,14 @@ import threading
 
 class SecNumberRegistry:
     def __init__(self):
-        self.ack_registry = {} # {client_address: sec_num_que_se_espera}
+        self.ack_registry = {}
         self.lock = threading.Lock()
         self.new_ack_events = {}
 
     def has(self, client_address, sec_num):
         with self.lock:
             print("[DEBUG] ACK REGISTRY: ", self.ack_registry)
-            return client_address in self.ack_registry and self.ack_registry[client_address] > sec_num
+            return client_address in self.ack_registry and self.ack_registry[client_address] >= sec_num
 
     def set_ack(self, client_address, sec_num: int):
         with self.lock:

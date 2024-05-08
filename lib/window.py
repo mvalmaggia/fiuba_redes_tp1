@@ -16,15 +16,15 @@ class Window:
     def try_add_packet(self, packet):
         with self.lock:
             if len(self.packets) < self.size:
-                # print(f"Paquete {packet.seq_num} agregado, ventana largo: {len(self.packets)}")
                 self.packets.append(packet)
+                print(f"Paquete {packet.seq_num} agregado, ventana largo: {len(self.packets)}")
                 self.restart_timer()
                 return True
             return False
 
     def restart_timer(self):
         # Cancela el temporizador anterior si existe
-        print("Reiniciando temporizador")
+        # print("Reiniciando temporizador")
         if self.timer:
             self.timer.cancel()
         self.timer = threading.Timer(self.timeout_interval, self.retransmit_unacknowledged_packets)
@@ -41,7 +41,11 @@ class Window:
     def remove_confirmed(self, ack_num):
         # Elimina paquetes confirmados de la ventana
         with self.lock:
-            self.packets = [pkt for pkt in self.packets if pkt.seq_num >= ack_num]
+            print(f'Se recibio el seq num {ack_num} y los paquetes en la ventana son: {[self.packets[i].seq_num for i in range(len(self.packets))]}')
+            if self.packets and self.packets[0].seq_num == ack_num - 1:
+                self.packets.pop(0)
+                self.restart_timer()
+            print(f'Paquetes en la ventana después de remover: {[self.packets[i].seq_num for i in range(len(self.packets))]}')
             if not self.packets:
                 self.condition.notify_all()  # Notifica a los hilos esperando que la ventana está vacía
 
@@ -55,3 +59,6 @@ class Window:
             self.timer.join()
             print("Temporizador detenido")
 
+    def wait_for_empty_window(self, timeout=None):
+        with self.condition:
+            return self.condition.wait_for(lambda: not self.packets, timeout)

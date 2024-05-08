@@ -25,7 +25,7 @@ def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack, t
 def receive(server_socket) -> (Packet, str):
     packet, sender_address = server_socket.recvfrom(4096)
     decoded_packet: Packet = pickle.loads(packet)
-    print(f"Paquete recibido: {decoded_packet}")
+    # print(f"Paquete recibido: {decoded_packet}")
     # Validar que todos los atributos necesarios están presentes
     required_attributes = ['seq_num', 'checksum', 'ack', 'fin', 'query_type', 'data']
     for attr in required_attributes:
