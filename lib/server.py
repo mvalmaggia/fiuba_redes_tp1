@@ -23,7 +23,7 @@ class ClientContext:
 
 
 class Server:
-    def __init__(self, server_socket, dir_path, algorithm=AlgorithmType.GBN):
+    def __init__(self, server_socket, dir_path, algorithm=AlgorithmType.SW):
         # Aqui se guarda el registro del ultimo numero de secuencia enviado a cada cliente
         # Necesita ser thread-safe porque no puede despues de escribir parar a leer, sino que con esto
         # Se puede despachar el ack, registrarlo y luego hacer polling para ver si se recibio el ack
@@ -41,7 +41,7 @@ class Server:
 
         while True:
             packet, client_address = receive(self.server_socket)
-            print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
+            # print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
             if client_address in self.client_handlers and packet.ack:
                 if self.algorithm == AlgorithmType.SW:
                     self.seq_nums_sent.set_ack(client_address, packet.get_seq_num())
@@ -76,9 +76,11 @@ class Server:
         print('Utilizando GBN para cliente ', client_address)
         while True:
             packet = client_queue.get()
-            if self.seq_nums_recv.has(client_address, packet.get_seq_num()):
-                print(f"[INFO] Paquete {packet.get_seq_num()} ya fue recibido, descartando")
-                self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
+            print(f'[INFO] Manejando el paquete: {packet}')
+            if self.seq_nums_recv.get_last_ack(client_address) != packet.get_seq_num() - 1:
+                print(f"[INFO] El paquete {packet.get_seq_num()} no es el esperado, enviando ack solicitando el proximo")
+                last_ack = self.seq_nums_recv.get_last_ack(client_address)
+                self.send_gbn(client_address, Packet(last_ack + 1, ack=True), window)
                 continue
             self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
 

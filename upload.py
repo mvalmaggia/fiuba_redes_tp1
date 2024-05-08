@@ -44,7 +44,7 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm=AlgorithmType.GBN):
         print("received ack after request, starting upload...")
         send_file_sw(sock, address, file_path, 2, function_check_ack, algorithm=AlgorithmType.SW)
     else:
-        window = Window(20, address, lambda client_address, packet: send_straightforward(sock, client_address, packet))
+        window = Window(4, address, lambda client_address, packet: send_straightforward(sock, client_address, packet))
         thread_window_manager = threading.Thread(target=window_manager, args=(window, sock))
         thread_window_manager.start()
         send_gbn(sock, address, upload_query_packet, window)
@@ -148,7 +148,7 @@ def main():
     else:
         log.basicConfig(format="%(levelname)s: %(message)s")
 
-    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.GBN)
+    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.SW)
 
 
 if __name__ == "__main__":

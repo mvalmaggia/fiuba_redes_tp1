@@ -42,9 +42,7 @@ class Window:
         # Elimina paquetes confirmados de la ventana
         with self.lock:
             print(f'Se recibio el seq num {ack_num} y los paquetes en la ventana son: {[self.packets[i].seq_num for i in range(len(self.packets))]}')
-            if self.packets and self.packets[0].seq_num == ack_num - 1:
-                self.packets.pop(0)
-                self.restart_timer()
+            self.packets = [packet for packet in self.packets if packet.seq_num >= ack_num]
             print(f'Paquetes en la ventana después de remover: {[self.packets[i].seq_num for i in range(len(self.packets))]}')
             if not self.packets:
                 self.condition.notify_all()  # Notifica a los hilos esperando que la ventana está vacía
