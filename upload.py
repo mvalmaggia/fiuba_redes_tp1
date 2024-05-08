@@ -2,7 +2,6 @@ import select
 import socket
 import pickle
 import os
-import sys
 import threading
 import time
 
@@ -11,7 +10,6 @@ from lib.server import AlgorithmType
 import argparse
 import logging as log
 
-from lib.sec_num_registry import SecNumberRegistry
 from lib.transmission import send_stop_n_wait, send_file_sw, receive
 from lib.window import Window
 
@@ -42,9 +40,10 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm=AlgorithmType.GBN):
         function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
         send_stop_n_wait(sock, address, upload_query_packet, function_check_ack)
         print("received ack after request, starting upload...")
-        send_file_sw(sock, address, file_path, 2, function_check_ack, algorithm=AlgorithmType.SW)
+        send_file_sw(sock, address, file_path, 2, function_check_ack)
     else:
-        window = Window(4, address, lambda client_address, packet: send_straightforward(sock, client_address, packet))
+        window = Window(4, address,
+                        lambda client_address, packet: send_straightforward(sock, client_address, packet))
         thread_window_manager = threading.Thread(target=window_manager, args=(window, sock))
         thread_window_manager.start()
         send_gbn(sock, address, upload_query_packet, window)
@@ -52,7 +51,6 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm=AlgorithmType.GBN):
         send_file_gbn(sock, address, file_path, 2, window)
         window.close_window()
         thread_window_manager.join()
-
 
     print("upload finished")
 
@@ -70,9 +68,11 @@ def window_manager(window: Window, sock):
             break
     window.close_window()
 
+
 def send_file_gbn(sock, client_address, file_path, start_sec_num, window: Window):
     print(f"Enviando archivo {file_path}")
-    # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
+    # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes
+    # para enviarlos al cliente en paquetes
     with open(file_path, "rb") as file:
         file_content = file.read(2048)
         # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
@@ -83,10 +83,10 @@ def send_file_gbn(sock, client_address, file_path, start_sec_num, window: Window
             file_content = file.read(2048)
             start_sec_num += 1
         window.wait_for_empty_window()
+
         # Se envia un paquete
         fin_packet = Packet(start_sec_num, True)
         send_gbn(sock, client_address, fin_packet, window)
-
 
 
 def send_gbn(sock, client_address, packet, window):
@@ -96,9 +96,12 @@ def send_gbn(sock, client_address, packet, window):
             print(f"Enviando paquete {packet.seq_num} a {client_address}")
             break
         else:
-            print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
+            print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} "
+                  f"a {client_address}")
             # TODO: Implementar un mecanismo de espera más eficiente (eventos)
-            time.sleep(0.5)  # Espera activa, considerar usar un mecanismo de espera más eficiente
+            # Espera activa, considerar usar un mecanismo de espera más eficiente
+            time.sleep(0.5)
+
 
 def send_straightforward(sock, client_address, packet):
     sock.sendto(pickle.dumps(packet), client_address)
@@ -130,8 +133,7 @@ def main():
     parser.add_argument('-p', '--port', help="server port", default=8000)
 
     parser.add_argument('-s', '--src', metavar="FILEPATH", help="source file path",
-                        default=os.path.dirname(__file__) +
-                                '/data/uploads/test.txt')
+                        default=os.path.dirname(__file__) + '/data/uploads/test.txt')
 
     # file name es el nombre con el cual se va a guardar el archivo en el
     # server_storage
@@ -140,15 +142,15 @@ def main():
 
     args = parser.parse_args()
 
-    UDP_IP = args.host
-    UDP_PORT = args.port
+    udp_ip = args.host
+    udp_port = args.port
     if args.verbose:
         log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
         log.info("Verbose output.")
     else:
         log.basicConfig(format="%(levelname)s: %(message)s")
 
-    upload(UDP_IP, UDP_PORT, args.src, args.name, algorithm=AlgorithmType.SW)
+    upload(udp_ip, udp_port, args.src, args.name, algorithm=AlgorithmType.SW)
 
 
 if __name__ == "__main__":

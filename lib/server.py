@@ -78,7 +78,8 @@ class Server:
             packet = client_queue.get()
             print(f'[INFO] Manejando el paquete: {packet}')
             if self.seq_nums_recv.get_last_ack(client_address) != packet.get_seq_num() - 1:
-                print(f"[INFO] El paquete {packet.get_seq_num()} no es el esperado, enviando ack solicitando el proximo")
+                print(f"[INFO] El paquete {packet.get_seq_num()} no es el esperado, "
+                      f"enviando ack solicitando el proximo")
                 last_ack = self.seq_nums_recv.get_last_ack(client_address)
                 self.send_gbn(client_address, Packet(last_ack + 1, ack=True), window)
                 continue
@@ -161,7 +162,8 @@ class Server:
         for i in range(attempts):
             self.send_locking(client_address, packet)
             time.sleep(timeout)
-            # print(f'Esperando ack para paquete {packet.seq_num} y el ultimo ack es {self.seq_nums_sent.get_last_ack(client_address)}')
+            # print(f'Esperando ack para paquete {packet.seq_num} y '
+            #       f'el ultimo ack es {self.seq_nums_sent.get_last_ack(client_address)}')
             if self.seq_nums_sent.get_last_ack(client_address) > packet.seq_num:
                 print(f"Recibido ack para el paquete {packet.seq_num}")
                 return True
@@ -220,4 +222,3 @@ class Server:
         data = packet.get_data()
         with open(file_path, "ab") as file:
             file.write(data)
-

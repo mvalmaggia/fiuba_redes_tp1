@@ -1,8 +1,5 @@
-import pickle
 from socket import AF_INET, SOCK_DGRAM, socket
-import threading
 import argparse
-from lib.packet import Packet
 import os
 
 from lib.server import Server

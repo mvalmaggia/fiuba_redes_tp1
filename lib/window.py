@@ -41,11 +41,14 @@ class Window:
     def remove_confirmed(self, ack_num):
         # Elimina paquetes confirmados de la ventana
         with self.lock:
-            print(f'Se recibio el seq num {ack_num} y los paquetes en la ventana son: {[self.packets[i].seq_num for i in range(len(self.packets))]}')
+            print(f'Se recibio el seq num {ack_num} y los paquetes en la ventana son: '
+                  f'{[self.packets[i].seq_num for i in range(len(self.packets))]}')
             self.packets = [packet for packet in self.packets if packet.seq_num >= ack_num]
-            print(f'Paquetes en la ventana después de remover: {[self.packets[i].seq_num for i in range(len(self.packets))]}')
+            print(f'Paquetes en la ventana después de remover: '
+                  f'{[self.packets[i].seq_num for i in range(len(self.packets))]}')
             if not self.packets:
-                self.condition.notify_all()  # Notifica a los hilos esperando que la ventana está vacía
+                # Notifica a los hilos esperando que la ventana está vacía
+                self.condition.notify_all()
 
     def close_window(self):
         """Solo utilizar cuando se está seguro de que la ventana se va a vaciar."""

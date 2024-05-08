@@ -64,17 +64,8 @@ def main():
     rcv_file(server_host, server_port, file_path, file_name)
 
 
-def retrans_go_back_n():
-    pass
-
-
-def retrans_stop_n_wait():
-    pass
-
-
 def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str):
     client_socket = socket(AF_INET, SOCK_DGRAM)
-    # client_socket.bind((server_host, server_port + 1))  # para prueba localhost
     client_socket.setblocking(True)
     server_address = (server_host, server_port)
     seq_num_client = 1
@@ -85,7 +76,8 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
     print('[DEBUG] file_path = ', file_path)
     print('[DEBUG] file_name = ', file_name)
     # Query
-    query_packet = Packet(seq_num_client, False, QueryType.DOWNLOAD, file_name=file_name)
+    query_packet = Packet(seq_num_client, False,
+                          QueryType.DOWNLOAD, file_name=file_name)
     send_stop_n_wait(client_socket, server_address, query_packet, function_check_ack)
     while True:
         decoded_packet, _ = receive(client_socket)
@@ -121,15 +113,10 @@ def rcv_file(server_host: str, server_port: int, file_path: str, file_name: str)
 
 def rebuild_file(packets: list, file_path: str):
     print('[INFO] Paquete recibido: ', packets[0].get_data())
-    # TODO: faltaria ordenar los paquetes segun su sequence number
     dwld_file = open(file_path, 'wb')
     for file_pkt in packets:
         dwld_file.write(file_pkt.get_data())
     dwld_file.close()
-
-
-def send_ack():
-    pass
 
 
 if __name__ == "__main__":
