@@ -150,7 +150,7 @@ def rcv_file(
 
 
 def rebuild_file(packets: list, file_path: str):
-    log.debug("Paquete recibido: %s", packets[0].get_data())
+    log.debug(f"Guardando {len(packets)} paquetes recibidos en {file_path}")
     dwld_file = open(file_path, "wb")
     for file_pkt in packets:
         dwld_file.write(file_pkt.get_data())

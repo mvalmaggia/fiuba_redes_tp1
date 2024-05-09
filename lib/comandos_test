@@ -1,0 +1,60 @@
+# Gobackn
+python start-server.py -g -v
+
+# Upload
+python upload.py -s data/uploads/1kb.txt -n 1kb_server.txt -g -v
+python upload.py -s data/uploads/10kb.txt -n 10kb_server.txt -g -v
+python upload.py -s data/uploads/100kb.txt -n 100kb_server.txt -g -v
+python upload.py -s data/uploads/500kb.txt -n 500kb_server.txt -g -v
+python upload.py -s data/uploads/1000kb.txt -n 1000kb_server.txt -g -v
+# Comprobaciones
+cmp data/uploads/1kb.txt data/server_storage/1kb_server.txt
+cmp data/uploads/10kb.txt data/server_storage/10kb_server.txt
+cmp data/uploads/100kb.txt data/server_storage/100kb_server.txt
+cmp data/uploads/500kb.txt data/server_storage/500kb_server.txt
+cmp data/uploads/1000kb.txt data/server_storage/1000kb_server.txt
+
+# Download
+python download.py -n 1kb_server.txt -d data/downloads/1kb_downloaded.txt -v
+python download.py -n 10kb_server.txt -d data/downloads/10kb_downloaded.txt -v
+python download.py -n 100kb_server.txt -d data/downloads/100kb_downloaded.txt -v
+python download.py -n 500kb_server.txt -d data/downloads/500kb_downloaded.txt -v
+python download.py -n 1000kb_server.txt -d data/downloads/1000kb_downloaded.txt -v
+
+# Comprobaciones
+cmp data/server_storage/1kb_server.txt data/downloads/1kb_downloaded.txt
+cmp data/server_storage/10kb_server.txt data/downloads/10kb_downloaded.txt
+cmp data/server_storage/100kb_server.txt data/downloads/100kb_downloaded.txt
+cmp data/server_storage/500kb_server.txt data/downloads/500kb_downloaded.txt
+cmp data/server_storage/1000kb_server.txt data/downloads/1000kb_downloaded.txt
+
+# Stop and wait
+python start-server.py -w -v
+
+# Upload
+python upload.py -s data/uploads/1kb.txt -n 1kb_server.txt -w -v
+python upload.py -s data/uploads/10kb.txt -n 10kb_server.txt -w -v
+python upload.py -s data/uploads/100kb.txt -n 100kb_server.txt -w -v
+python upload.py -s data/uploads/500kb.txt -n 500kb_server.txt -w -v
+python upload.py -s data/uploads/1000kb.txt -n 1000kb_server.txt -w -v
+
+# Comprobaciones
+cmp data/uploads/1kb.txt data/server_storage/1kb_server.txt
+cmp data/uploads/10kb.txt data/server_storage/10kb_server.txt
+cmp data/uploads/100kb.txt data/server_storage/100kb_server.txt
+cmp data/uploads/500kb.txt data/server_storage/500kb_server.txt
+cmp data/uploads/1000kb.txt data/server_storage/1000kb_server.txt
+
+# Download
+python download.py -n 1kb_server.txt -d data/downloads/1kb_downloaded.txt -v
+python download.py -n 10kb_server.txt -d data/downloads/10kb_downloaded.txt -v
+python download.py -n 100kb_server.txt -d data/downloads/100kb_downloaded.txt -v
+python download.py -n 500kb_server.txt -d data/downloads/500kb_downloaded.txt -v
+python download.py -n 1000kb_server.txt -d data/downloads/1000kb_downloaded.txt -v
+
+# Comprobaciones
+cmp data/server_storage/1kb_server.txt data/downloads/1kb_downloaded.txt
+cmp data/server_storage/10kb_server.txt data/downloads/10kb_downloaded.txt
+cmp data/server_storage/100kb_server.txt data/downloads/100kb_downloaded.txt
+cmp data/server_storage/500kb_server.txt data/downloads/500kb_downloaded.txt
+cmp data/server_storage/1000kb_server.txt data/downloads/1000kb_downloaded.txt

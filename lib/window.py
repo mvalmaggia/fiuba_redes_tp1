@@ -11,7 +11,7 @@ class Window:
         self.packets = []
         self.lock = threading.Lock()
         self.timer = None
-        self.timeout_interval = 3
+        self.timeout_interval = 0.2
         self.send_function = send_function
         self.client_address = client_address
         self.condition = threading.Condition(self.lock)
