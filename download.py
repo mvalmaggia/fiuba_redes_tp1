@@ -86,9 +86,11 @@ def rcv_file(
     seq_num_client = 1
     seq_num_expected = 1
     packets = {}
-    function_check_ack = lambda sec_num_to_check: check_ack_client(
-        client_socket, sec_num_to_check
-    )
+
+    # reemplazo la lambda por Flake8
+
+    def function_check_ack(sec_num_to_check):
+        return check_ack_client(client_socket, sec_num_to_check)
 
     print("[DEBUG] file_path = ", file_path)
     print("[DEBUG] file_name = ", file_name)

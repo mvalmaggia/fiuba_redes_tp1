@@ -35,7 +35,12 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
     )
     address = (udp_ip, udp_port)
     if algorithm == AlgorithmType.SW:
-        function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
+
+        # Reemplazo la lambda por Flake8
+
+        def function_check_ack(seq_num):
+            return check_ack_client(sock, seq_num)
+
         send_stop_n_wait(
             sock, address, upload_query_packet, function_check_ack
         )
@@ -123,7 +128,9 @@ def check_ack_client(sock, seq_num):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Transferencia de un archivo del cliente hacia el servidor."
+        description=(
+            "Transferencia de un archivo del cliente hacia el servidor."
+        )
     )
 
     group = parser.add_mutually_exclusive_group()

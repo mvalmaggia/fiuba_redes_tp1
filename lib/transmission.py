@@ -1,5 +1,6 @@
 import time
 import pickle
+from typing import Tuple
 import zlib
 
 from lib.packet import Packet
@@ -32,7 +33,7 @@ def send_stop_n_wait(
     raise TimeoutError("No se recibio ack para el paquete")
 
 
-def receive(server_socket) -> (Packet, str):
+def receive(server_socket) -> Tuple[Packet, str]:
     packet, sender_address = server_socket.recvfrom(4096)
     decoded_packet: Packet = pickle.loads(packet)
     # print(f"Paquete recibido: {decoded_packet}")

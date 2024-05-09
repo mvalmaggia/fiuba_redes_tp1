@@ -57,9 +57,12 @@ class Window:
             self.packets = [
                 packet for packet in self.packets if packet.seq_num >= ack_num
             ]
+            paquetes = [
+                self.packets[i].seq_num for i in range(len(self.packets))
+            ]
             print(
                 f"Paquetes en la ventana después de remover: "
-                f"{[self.packets[i].seq_num for i in range(len(self.packets))]}"
+                f"{paquetes}"
             )
             if not self.packets:
                 # Notifica a los hilos esperando que la ventana está vacía
