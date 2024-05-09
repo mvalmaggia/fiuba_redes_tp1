@@ -70,7 +70,8 @@ Luego también podremos verificar que los archivos son iguales con el comando `c
 
 ### Probando Go-Back-N
 Iniciamos servidor con Go-Back-N y luego esos 5 comandos subira al servidor los archivos. Podemos también verificar que los archivos son iguales con el comando `cmp`.  
-De igual manera, se pueden descargar los archivos del servidor en la carpeta downloads y verificar que son iguales con el comando `cmp`.
+De igual manera, se pueden descargar los archivos del servidor en la carpeta downloads y verificar que son iguales con el comando `cmp`.  
+En el caso más lento (stop and wait) con el archivo de 1mb tarda aproximadamente 1 minuto en subir y bajar. El resto considerablemente menos tiempo.
 ```bash
 python start-server.py -g -v
 ```
