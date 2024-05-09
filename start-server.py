@@ -98,6 +98,7 @@ def main():
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((server_host, server_port))
     server = Server(server_socket, dir_path, algorithm)
+    log.info("Servidor listo para recibir consultas")
     server.listen()
 
 

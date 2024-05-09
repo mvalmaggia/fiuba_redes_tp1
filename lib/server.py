@@ -95,7 +95,6 @@ class Server:
 
             # Enviar el paquete a la cola del cliente
             self.client_handlers[client_address].client_queue.put(packet)
-            self.cleanup_clients()
 
     def handle_client_gbn(self, client_address, client_queue, window: Window):
         log.debug("Utilizando GBN para cliente ", client_address)
@@ -119,33 +118,15 @@ class Server:
             self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
 
             if packet.get_fin():
-                log.info('Se recibe un paquete de fin de conexion')
                 self.send_gbn(
                     client_address,
                     Packet(packet.seq_num + 1, end_conection=True, ack=True),
                     window,
                 )
-                log.info('Esperando un segundo por si no recibe el ack antes de cerrar la conexion')
-                time.sleep(1)
-                while not client_queue.empty():
-                    packet = client_queue.get_nowait()
-                    if packet.get_fin():
-                        self.send_gbn(client_address, Packet(packet.seq_num + 1, end_conection=True, ack=True), window)
                 log.info("Conexion con %s finalizada", client_address)
                 break
             self.process_packet_gbn(packet, client_address, window)
         window.close_window()
-        self.client_handlers[client_address].is_finished = True
-
-    def cleanup_clients(self):
-        to_remove = []
-        for client_address, context in self.client_handlers.items():
-            if context.is_finished and context.client_queue.empty():
-                to_remove.append(client_address)
-
-        for client_address in to_remove:
-            del self.client_handlers[client_address]
-            log.info(f"Contexto limpiado para el cliente {client_address}")
 
     def process_packet_gbn(self, packet, client_address, window: Window):
         if packet.get_is_download_query():
@@ -200,7 +181,6 @@ class Server:
                 log.info("Conexion con %s finalizada", client_address)
                 break
             self.process_packet_sw(packet, client_address)
-        self.client_handlers[client_address].is_finished = True
 
     def process_packet_sw(self, packet: Packet, client_address):
         if packet.get_is_download_query():
@@ -295,6 +275,8 @@ class Server:
                     f"paquete {packet.seq_num} "
                     f"a {client_address}"
                 )
+                # Espera activa
+                print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
                 # TODO: Implementar un mecanismo de espera más eficiente (eventos)
                 time.sleep(0.1)  # Espera activa, considerar usar un mecanismo de espera más eficiente
 
