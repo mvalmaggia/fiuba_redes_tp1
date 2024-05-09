@@ -64,10 +64,12 @@ def main():
 
     args = parser.parse_args()
     if args.verbose:
-        log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+        logging.basicConfig(
+            format="%(levelname)s: %(message)s", level=log.DEBUG
+        )
         log.debug("Verbose output.")
     else:
-        log.basicConfig(format="%(levelname)s: %(message)s")
+        logging.basicConfig(format="%(levelname)s: %(message)s")
     if args.quiet:
         verbose = False
     if args.host is not None:

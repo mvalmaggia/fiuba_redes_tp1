@@ -8,7 +8,7 @@ import time
 from lib.packet import Packet, QueryType
 from lib.server import AlgorithmType
 import argparse
-import logging as log
+import logging
 
 from lib.transmission import send_stop_n_wait, send_file_sw, receive
 from lib.window import Window
@@ -22,6 +22,7 @@ from lib.window import Window
 # -p, --port server port
 # -s, --src source file path
 # -n, --name file name
+log = logging.getLogger(__name__)
 
 PACKET_SIZE = 1024
 
@@ -208,7 +209,7 @@ def main():
         log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
         log.debug("Verbose output.")
     else:
-        log.basicConfig(format="%(levelname)s: %(message)s")
+        logging.basicConfig(format="%(levelname)s: %(message)s")
 
     algorithm = AlgorithmType.SW if args.sw else AlgorithmType.GBN
 
