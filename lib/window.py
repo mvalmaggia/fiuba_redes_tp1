@@ -17,7 +17,10 @@ class Window:
         with self.lock:
             if len(self.packets) < self.size:
                 self.packets.append(packet)
-                print(f"Paquete {packet.seq_num} agregado, ventana largo: {len(self.packets)}")
+                print(
+                    f"Paquete {packet.seq_num} agregado, "
+                    f"ventana largo: {len(self.packets)}"
+                )
                 self.restart_timer()
                 return True
             return False
@@ -27,7 +30,9 @@ class Window:
         # print("Reiniciando temporizador")
         if self.timer:
             self.timer.cancel()
-        self.timer = threading.Timer(self.timeout_interval, self.retransmit_unacknowledged_packets)
+        self.timer = threading.Timer(
+            self.timeout_interval, self.retransmit_unacknowledged_packets
+        )
         self.timer.start()
 
     def retransmit_unacknowledged_packets(self):
@@ -41,17 +46,32 @@ class Window:
     def remove_confirmed(self, ack_num):
         # Elimina paquetes confirmados de la ventana
         with self.lock:
-            print(f'Se recibio el seq num {ack_num} y los paquetes en la ventana son: '
-                  f'{[self.packets[i].seq_num for i in range(len(self.packets))]}')
-            self.packets = [packet for packet in self.packets if packet.seq_num >= ack_num]
-            print(f'Paquetes en la ventana después de remover: '
-                  f'{[self.packets[i].seq_num for i in range(len(self.packets))]}')
+            paquetes = [
+                self.packets[i].seq_num for i in range(len(self.packets))
+            ]
+            print(
+                f"Se recibio el seq num {ack_num} y los paquetes "
+                f"en la ventana son: "
+                f"{paquetes}"
+            )
+            self.packets = [
+                packet for packet in self.packets if packet.seq_num >= ack_num
+            ]
+            paquetes = [
+                self.packets[i].seq_num for i in range(len(self.packets))
+            ]
+            print(
+                f"Paquetes en la ventana después de remover: "
+                f"{paquetes}"
+            )
             if not self.packets:
                 # Notifica a los hilos esperando que la ventana está vacía
                 self.condition.notify_all()
 
     def close_window(self):
-        """Solo utilizar cuando se está seguro de que la ventana se va a vaciar."""
+        """
+        Solo utilizar cuando se está seguro de que la ventana se va a vaciar.
+        """
         with self.condition:
             self.condition.wait_for(lambda: not self.packets)
             print("La ventana ahora está vacía.")

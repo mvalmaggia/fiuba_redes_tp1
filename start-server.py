@@ -7,7 +7,7 @@ from lib.server import Server, AlgorithmType
 # Por defecto
 verbose = True
 
-DEFAULT_HOST = '127.0.0.1'
+DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 
 
@@ -24,31 +24,54 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    dir_path = os.path.dirname(__file__) + '/data/server_storage'
+    dir_path = os.path.dirname(__file__) + "/data/server_storage"
 
     parser = argparse.ArgumentParser(
-        description="Server capable of uploading/downloading uploads")
+        description="Server capable of uploading/downloading uploads"
+    )
 
     # Se elige uno para la verbosidad de los mensajes por consola
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-v", "--verbose", help="increase output verbosity",
-                       action="store_true")
-    group.add_argument("-q", "--quiet",
-                       help="decrease output verbosity", action="store_true")
+    group.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity",
+        action="store_true",
+    )
+    group.add_argument(
+        "-q", "--quiet", help="decrease output verbosity", action="store_true"
+    )
 
     # Especificaciones de conexion/guardado de archivo
-    parser.add_argument("-H", "--host", help="service IP address",
-                        required=False, type=str)
-    parser.add_argument("-p", "--port", help="service port number",
-                        required=False, type=int)
-    parser.add_argument("-s", "--storage", help="server_storage dir path",
-                        default=dir_path,
-                        required=False, type=str)
+    parser.add_argument(
+        "-H", "--host", help="service IP address", required=False, type=str
+    )
+    parser.add_argument(
+        "-p", "--port", help="service port number", required=False, type=int
+    )
+    parser.add_argument(
+        "-s",
+        "--storage",
+        help="server_storage dir path",
+        default=dir_path,
+        required=False,
+        type=str,
+    )
     group_algorithm = parser.add_mutually_exclusive_group()
-    group_algorithm.add_argument("-g", "--gbn", help="Server use Go Back N algorithm",
-                                 required=False, action="store_true")
-    group_algorithm.add_argument("-w", "--sw", help="Server use Stop and Wait algorithm",
-                                 required=False, action="store_true")
+    group_algorithm.add_argument(
+        "-g",
+        "--gbn",
+        help="Server use Go Back N algorithm",
+        required=False,
+        action="store_true",
+    )
+    group_algorithm.add_argument(
+        "-w",
+        "--sw",
+        help="Server use Stop and Wait algorithm",
+        required=False,
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
