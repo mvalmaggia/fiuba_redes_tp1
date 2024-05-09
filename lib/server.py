@@ -16,7 +16,9 @@ class AlgorithmType(Enum):
 
 
 class ClientContext:
-    def __init__(self, client_address, client_queue, window: Window | None = None):
+    def __init__(
+        self, client_address, client_queue, window: Window | None = None
+    ):
         self.client_address = client_address
         self.client_queue = client_queue
         self.window: Window | None = window
@@ -44,7 +46,9 @@ class Server:
             # print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
             if client_address in self.client_handlers and packet.ack:
                 if self.algorithm == AlgorithmType.SW:
-                    self.seq_nums_sent.set_ack(client_address, packet.get_seq_num())
+                    self.seq_nums_sent.set_ack(
+                        client_address, packet.get_seq_num()
+                    )
                     continue
                 else:
                     window = self.client_handlers[client_address].window
@@ -54,7 +58,7 @@ class Server:
             if client_address not in self.client_handlers:
                 client_queue = queue.Queue()
                 # Crear una nueva cola para este cliente
-                print('[INFO] Nuevo cliente: ', client_address)
+                print("[INFO] Nuevo cliente: ", client_address)
                 # Iniciar un nuevo hilo para manejar a este cliente
                 if self.algorithm == AlgorithmType.GBN:
 
@@ -65,65 +69,98 @@ class Server:
                     client_thread = threading.Thread(target=self.handle_client_gbn, args=(client_address, client_queue,
                                                                                           window))
                 else:
-                    self.client_handlers[client_address] = ClientContext(client_address, client_queue, None)
-                    client_thread = threading.Thread(target=self.handle_client_sw, args=(client_address, client_queue))
+                    self.client_handlers[client_address] = ClientContext(
+                        client_address, client_queue, None
+                    )
+                    client_thread = threading.Thread(
+                        target=self.handle_client_sw,
+                        args=(client_address, client_queue),
+                    )
                 client_thread.start()
 
             # Enviar el paquete a la cola del cliente
             self.client_handlers[client_address].client_queue.put(packet)
 
     def handle_client_gbn(self, client_address, client_queue, window: Window):
-        print('Utilizando GBN para cliente ', client_address)
+        print("Utilizando GBN para cliente ", client_address)
         while True:
             packet = client_queue.get()
-            print(f'[INFO] Manejando el paquete: {packet}')
-            if self.seq_nums_recv.get_last_ack(client_address) != packet.get_seq_num() - 1:
-                print(f"[INFO] El paquete {packet.get_seq_num()} no es el esperado, "
-                      f"enviando ack solicitando el proximo")
+            print(f"[INFO] Manejando el paquete: {packet}")
+            if (
+                self.seq_nums_recv.get_last_ack(client_address)
+                != packet.get_seq_num() - 1
+            ):
+                print(
+                    f"[INFO] El paquete {packet.get_seq_num()} no es el esperado, "
+                    f"enviando ack solicitando el proximo"
+                )
                 last_ack = self.seq_nums_recv.get_last_ack(client_address)
-                self.send_gbn(client_address, Packet(last_ack + 1, ack=True), window)
+                self.send_gbn(
+                    client_address, Packet(last_ack + 1, ack=True), window
+                )
                 continue
             self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
 
             if packet.get_fin():
-                self.send_gbn(client_address, Packet(packet.seq_num + 1, end_conection=True, ack=True), window)
-                print('[INFO] Conexion con ', client_address, ' finalizada')
+                self.send_gbn(
+                    client_address,
+                    Packet(packet.seq_num + 1, end_conection=True, ack=True),
+                    window,
+                )
+                print("[INFO] Conexion con ", client_address, " finalizada")
                 break
             self.process_packet_gbn(packet, client_address, window)
         window.close_window()
 
     def process_packet_gbn(self, packet, client_address, window: Window):
         if packet.get_is_download_query():
-            self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
+            self.send_gbn(
+                client_address, Packet(packet.seq_num + 1, ack=True), window
+            )
             start_seq_num = 1
-            self.send_file_gbn(client_address, self.dir_path + '/' + packet.get_file_name(), start_seq_num, window)
+            self.send_file_gbn(
+                client_address,
+                self.dir_path + "/" + packet.get_file_name(),
+                start_seq_num,
+                window,
+            )
         elif packet.get_is_upload_query():
-            file_path = self.dir_path + '/' + packet.get_file_name()
+            file_path = self.dir_path + "/" + packet.get_file_name()
             open(file_path, "w").close()
             self._clients_pending_upload[client_address] = file_path
-            self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
+            self.send_gbn(
+                client_address, Packet(packet.seq_num + 1, ack=True), window
+            )
         elif client_address in self._clients_pending_upload:
             last_seq_num = self.seq_nums_recv.get_last_ack(client_address)
-            print(f'Seq num recibido: {packet.get_seq_num()} y el ultimo seq num recibido es {last_seq_num}')
+            print(
+                f"Seq num recibido: {packet.get_seq_num()} y el ultimo seq num recibido es {last_seq_num}"
+            )
             if packet.get_seq_num() == last_seq_num:
                 file_path = self._clients_pending_upload[client_address]
                 self.save_packet_in_file(packet, file_path)
-            self.send_gbn(client_address, Packet(packet.seq_num + 1, ack=True), window)
+            self.send_gbn(
+                client_address, Packet(packet.seq_num + 1, ack=True), window
+            )
         else:
-            print('[ERROR] Query no reconocida')
+            print("[ERROR] Query no reconocida")
 
     def handle_client_sw(self, client_address, client_queue):
         # Esto se puede hacer en el hilo principal porque no se bloquea
         while True:
-            packet = client_queue.get()  # Bloquea hasta que hay un paquete en la cola
+            packet = (
+                client_queue.get()
+            )  # Bloquea hasta que hay un paquete en la cola
             if self.seq_nums_recv.has(client_address, packet.get_seq_num()):
-                print(f"[INFO] Paquete {packet.get_seq_num()} ya fue recibido, descartando")
+                print(
+                    f"[INFO] Paquete {packet.get_seq_num()} ya fue recibido, descartando"
+                )
                 self.send_ack_sw(client_address)
                 continue
             self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
             if packet.get_fin():
                 self.send_ack_sw(client_address)
-                print('[INFO] Conexion con ', client_address, ' finalizada')
+                print("[INFO] Conexion con ", client_address, " finalizada")
                 break
             self.process_packet_sw(packet, client_address)
 
@@ -131,10 +168,13 @@ class Server:
         if packet.get_is_download_query():
             start_seq_num = 1
             self.send_ack_sw(client_address)
-            self.send_file_sw(client_address, self.dir_path + '/' + packet.get_file_name(),
-                              start_seq_num)
+            self.send_file_sw(
+                client_address,
+                self.dir_path + "/" + packet.get_file_name(),
+                start_seq_num,
+            )
         elif packet.get_is_upload_query():
-            file_path = self.dir_path + '/' + packet.get_file_name()
+            file_path = self.dir_path + "/" + packet.get_file_name()
             open(file_path, "w").close()
             self._clients_pending_upload[client_address] = file_path
             self.send_ack_sw(client_address)
@@ -146,15 +186,17 @@ class Server:
                 self.save_packet_in_file(packet, file_path)
             self.send_ack_sw(client_address)
         else:
-            print('[ERROR] Query no reconocida')
+            print("[ERROR] Query no reconocida")
 
     def send_ack_sw(self, client_address):
         last_ack = self.seq_nums_recv.get_last_ack(client_address)
-        print('El ultimo ack enviado fue: ', last_ack)
+        print("El ultimo ack enviado fue: ", last_ack)
         ack_packet = Packet(last_ack + 1, ack=True)
         self.send_sw(client_address, ack_packet)
 
-    def send_sw(self, client_address, packet: Packet, timeout=0.1, attempts=50):
+    def send_sw(
+        self, client_address, packet: Packet, timeout=0.1, attempts=50
+    ):
         print(f"Enviando paquete {packet}")
         if packet.ack:
             self.send_locking(client_address, packet)
@@ -164,13 +206,25 @@ class Server:
             time.sleep(timeout)
             # print(f'Esperando ack para paquete {packet.seq_num} y '
             #       f'el ultimo ack es {self.seq_nums_sent.get_last_ack(client_address)}')
-            if self.seq_nums_sent.get_last_ack(client_address) > packet.seq_num:
+            if (
+                self.seq_nums_sent.get_last_ack(client_address)
+                > packet.seq_num
+            ):
                 print(f"Recibido ack para el paquete {packet.seq_num}")
                 return True
-            print(f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}")
+            print(
+                f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}"
+            )
         raise TimeoutError("No se recibio ack para el paquete")
 
-    def send_file_sw(self, client_address, file_path, start_sec_num, timeout=0.1, attempts=50):
+    def send_file_sw(
+        self,
+        client_address,
+        file_path,
+        start_sec_num,
+        timeout=0.1,
+        attempts=50,
+    ):
         print(f"Enviando archivo {file_path}")
         # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
         with open(file_path, "rb") as file:
@@ -197,11 +251,17 @@ class Server:
                 print(f"Enviando paquete {packet}")
                 break
             else:
-                print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
+                print(
+                    f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}"
+                )
                 # TODO: Implementar un mecanismo de espera más eficiente (eventos)
-                time.sleep(0.5)  # Espera activa, considerar usar un mecanismo de espera más eficiente
+                time.sleep(
+                    0.5
+                )  # Espera activa, considerar usar un mecanismo de espera más eficiente
 
-    def send_file_gbn(self, client_address, file_path, start_sec_num, window: Window):
+    def send_file_gbn(
+        self, client_address, file_path, start_sec_num, window: Window
+    ):
         print(f"Enviando archivo {file_path}")
         # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
         with open(file_path, "rb") as file:

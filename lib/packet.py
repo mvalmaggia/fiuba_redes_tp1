@@ -18,13 +18,20 @@ class Packet:
     query_type: QueryType
     data: bytes
 
-    def __init__(self, seq_num, end_conection=False, query_type=None, file_name=None, ack=False):
+    def __init__(
+        self,
+        seq_num,
+        end_conection=False,
+        query_type=None,
+        file_name=None,
+        ack=False,
+    ):
         self.seq_num = seq_num
         self.fin = end_conection
         self.ack = ack
         self.query_type = query_type
         self.file_name = file_name
-        self.data = b''
+        self.data = b""
         self.checksum = self.generate_checksum()
 
     def acknowledge(self):
@@ -37,7 +44,7 @@ class Packet:
         self.checksum = self.generate_checksum()
 
     def generate_checksum(self):
-        return zlib.crc32(self.data) & 0xffffffff
+        return zlib.crc32(self.data) & 0xFFFFFFFF
 
     def get_data(self):
         return self.data
@@ -64,6 +71,8 @@ class Packet:
         return self.file_name
 
     def __str__(self):
-        return (f"Packet(seq_num={self.seq_num}, ack={self.ack}, "
-                f"fin={self.fin}, query_type={self.query_type}, "
-                f"data_length={len(self.data)}), checksum={self.checksum})")
+        return (
+            f"Packet(seq_num={self.seq_num}, ack={self.ack}, "
+            f"fin={self.fin}, query_type={self.query_type}, "
+            f"data_length={len(self.data)}), checksum={self.checksum})"
+        )

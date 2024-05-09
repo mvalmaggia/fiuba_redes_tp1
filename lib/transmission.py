@@ -5,8 +5,14 @@ import zlib
 from lib.packet import Packet
 
 
-def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack,
-                     timeout=0.1, attempts=50) -> bool:
+def send_stop_n_wait(
+    server_socket,
+    client_address,
+    packet: Packet,
+    check_ack,
+    timeout=0.1,
+    attempts=50,
+) -> bool:
     if packet.ack:
         server_socket.sendto(pickle.dumps(packet), client_address)
         print(f"Enviando ack {packet}")
@@ -19,7 +25,9 @@ def send_stop_n_wait(server_socket, client_address, packet: Packet, check_ack,
         if check_ack(packet.seq_num):
             print(f"Recibido ack para el paquete {packet.seq_num}")
             return True
-        print(f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}")
+        print(
+            f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}"
+        )
     raise TimeoutError("No se recibio ack para el paquete")
 
 
@@ -29,14 +37,23 @@ def receive(server_socket) -> (Packet, str):
     # print(f"Paquete recibido: {decoded_packet}")
 
     # Validar que todos los atributos necesarios están presentes
-    required_attributes = ['seq_num', 'checksum', 'ack', 'fin', 'query_type', 'data']
+    required_attributes = [
+        "seq_num",
+        "checksum",
+        "ack",
+        "fin",
+        "query_type",
+        "data",
+    ]
     for attr in required_attributes:
         if not hasattr(decoded_packet, attr):
             print(f"El paquete recibido no tiene el atributo {attr}")
-            raise AttributeError(f"El paquete recibido no tiene el atributo {attr}")
+            raise AttributeError(
+                f"El paquete recibido no tiene el atributo {attr}"
+            )
 
     # Se recalcula el checksum de la data recibida
-    calculated_checksum = zlib.crc32(decoded_packet.data) & 0xffffffff
+    calculated_checksum = zlib.crc32(decoded_packet.data) & 0xFFFFFFFF
 
     # Chequeo de integridad de data recibida
     if calculated_checksum != decoded_packet.checksum:
@@ -57,11 +74,24 @@ def send_file_sw(server_socket, client_address, file_path, start_sec_num,
         while file_content:
             data_packet = Packet(start_sec_num, False)
             data_packet.insert_data(file_content)
-            send_stop_n_wait(server_socket, client_address, data_packet, check_ack,
-                             timeout, attempts)
+            send_stop_n_wait(
+                server_socket,
+                client_address,
+                data_packet,
+                check_ack,
+                timeout,
+                attempts,
+            )
             file_content = file.read(2048)
             start_sec_num += 1
 
         # Se envia un paquete con el fin de la transmision
         fin_packet = Packet(start_sec_num, True)
-        send_stop_n_wait(server_socket, client_address, fin_packet, check_ack, timeout, attempts)
+        send_stop_n_wait(
+            server_socket,
+            client_address,
+            fin_packet,
+            check_ack,
+            timeout,
+            attempts,
+        )

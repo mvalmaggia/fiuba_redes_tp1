@@ -7,7 +7,7 @@ from lib.server import Server, AlgorithmType
 # Por defecto
 verbose = True
 
-DEFAULT_HOST = '127.0.0.1'
+DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 
 
@@ -24,17 +24,23 @@ def main():
     global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
-    dir_path = os.path.dirname(__file__) + '/data/server_storage'
+    dir_path = os.path.dirname(__file__) + "/data/server_storage"
 
     parser = argparse.ArgumentParser(
-        description="Server capable of uploading/downloading uploads")
+        description="Server capable of uploading/downloading uploads"
+    )
 
     # Se elige uno para la verbosidad de los mensajes por consola
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-v", "--verbose", help="increase output verbosity",
-                       action="store_true")
-    group.add_argument("-q", "--quiet",
-                       help="decrease output verbosity", action="store_true")
+    group.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity",
+        action="store_true",
+    )
+    group.add_argument(
+        "-q", "--quiet", help="decrease output verbosity", action="store_true"
+    )
 
     # Especificaciones de conexion/guardado de archivo
     parser.add_argument("-H", "--host", help="service IP address",

@@ -30,12 +30,15 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
         file_path = os.path.join(current_directory, file_path)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    upload_query_packet = Packet(1, False, QueryType.UPLOAD,
-                                 file_name=file_name)
+    upload_query_packet = Packet(
+        1, False, QueryType.UPLOAD, file_name=file_name
+    )
     address = (udp_ip, udp_port)
     if algorithm == AlgorithmType.SW:
         function_check_ack = lambda seq_num: check_ack_client(sock, seq_num)
-        send_stop_n_wait(sock, address, upload_query_packet, function_check_ack)
+        send_stop_n_wait(
+            sock, address, upload_query_packet, function_check_ack
+        )
         print("received ack after request, starting upload...")
         send_file_sw(sock, address, file_path, 2, function_check_ack)
     else:
@@ -66,7 +69,9 @@ def window_manager(window: Window, sock):
     window.close_window()
 
 
-def send_file_gbn(sock, client_address, file_path, start_sec_num, window: Window):
+def send_file_gbn(
+    sock, client_address, file_path, start_sec_num, window: Window
+):
     print(f"Enviando archivo {file_path}")
     # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes
     # para enviarlos al cliente en paquetes
@@ -115,21 +120,36 @@ def check_ack_client(sock, seq_num):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Transferencia de un archivo del cliente hacia el servidor.')
+        description="Transferencia de un archivo del cliente hacia el servidor."
+    )
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-v', '--verbose', action='store_true',
-                       help="increase output verbosity")
-    group.add_argument('-q', '--quite', action='store_false',
-                       help="decrease output verbosity")
+    group.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="increase output verbosity",
+    )
+    group.add_argument(
+        "-q", "--quite", action="store_false", help="decrease output verbosity"
+    )
 
-    parser.add_argument('-H', '--host', metavar="ADDR", help="server IP address",
-                        default="127.0.0.1")
-    parser.add_argument('-p', '--port', help="server port", default=8000)
+    parser.add_argument(
+        "-H",
+        "--host",
+        metavar="ADDR",
+        help="server IP address",
+        default="127.0.0.1",
+    )
+    parser.add_argument("-p", "--port", help="server port", default=8000)
 
-    parser.add_argument('-s', '--src', metavar="FILEPATH", help="source file path",
-                        required=True,
-                        default=os.path.dirname(__file__) + '/data/uploads/test.txt')
+    parser.add_argument(
+        "-s",
+        "--src",
+        metavar="FILEPATH",
+        help="source file path",
+        default=os.path.dirname(__file__) + "/data/uploads/test.txt",
+    )
 
     # file name es el nombre con el cual se va a guardar el archivo en el
     # server_storage
