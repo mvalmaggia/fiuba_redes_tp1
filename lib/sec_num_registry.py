@@ -12,7 +12,7 @@ class SecNumberRegistry:
 
     def has(self, client_address, sec_num):
         with self.lock:
-            log.debug("[DEBUG] ACK REGISTRY: ", self.ack_registry)
+            log.debug("ACK REGISTRY: %s", self.ack_registry)
             return (
                 client_address in self.ack_registry
                 and self.ack_registry[client_address] >= sec_num

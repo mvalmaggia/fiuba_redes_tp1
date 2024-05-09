@@ -7,8 +7,6 @@ from lib.packet import Packet, QueryType
 from upload import check_ack_client
 from lib.transmission import send_stop_n_wait, receive
 
-# Por defecto
-verbose = True
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -27,7 +25,7 @@ log = logging.getLogger(__name__)
 # -d:      Directorio a guardar el archivo bajado
 # -n:      Nombre del archivo a bajar
 def main():
-    global verbose
+    verbose = True
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
     file_path = (
@@ -65,11 +63,12 @@ def main():
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(
-            format="%(levelname)s: %(message)s", level=log.DEBUG
+            format="%(levelname)s: %(message)s", level="DEBUG"
         )
         log.debug("Verbose output.")
     else:
-        logging.basicConfig(format="%(levelname)s: %(message)s")
+        logging.basicConfig(format="%(levelname)s: %(message)s", level="INFO")
+        verbose = False
     if args.quiet:
         verbose = False
     if args.host is not None:
@@ -80,7 +79,7 @@ def main():
         file_path = args.dst
     file_name = args.file_name
 
-    log.debug("[DEBUG] args= ", [verbose, server_host, server_port, file_path])
+    log.debug("args= %s", [verbose, server_host, server_port, file_path])
 
     rcv_file(server_host, server_port, file_path, file_name)
 
@@ -100,8 +99,8 @@ def rcv_file(
     def function_check_ack(sec_num_to_check):
         return check_ack_client(client_socket, sec_num_to_check)
 
-    log.debug("[DEBUG] file_path = ", file_path)
-    log.debug("[DEBUG] file_name = ", file_name)
+    log.debug("file_path = %s", file_path)
+    log.debug("file_name = %s", file_name)
     # Query
     query_packet = Packet(
         seq_num_client, False, QueryType.DOWNLOAD, file_name=file_name
@@ -109,15 +108,12 @@ def rcv_file(
     send_stop_n_wait(
         client_socket, server_address, query_packet, function_check_ack
     )
+
+    log.info("Comenzando descarga...")
+
     while True:
         decoded_packet, _ = receive(client_socket)
-        log.debug(f"[DEBUG] Paquete recibido: {decoded_packet}")
-        # log.debug('[DEBUG] Paquete recibido: ')
-        # log.debug('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
-        # log.debug('[DEBUG]   ack: ', decoded_packet.get_ack())
-        # log.debug('[DEBUG]   fin: ', decoded_packet.get_fin())
-        # log.debug('[DEBUG]   data: ', decoded_packet.get_data())
-        log.debug(f"[DEBUG] Paquetes al momento: {packets.keys()}")
+        log.debug(f"Paquete recibido: {decoded_packet}")
         if decoded_packet.get_seq_num() != seq_num_expected:
             ack_packet = Packet(seq_num_expected, ack=True)
             send_stop_n_wait(
@@ -147,11 +143,14 @@ def rcv_file(
 
     ordered_packets = [packets[seq] for seq in sorted(packets)]
     rebuild_file(ordered_packets, file_path)
+
+    log.info("Archivo descargado exitosamente")
+
     client_socket.close()
 
 
 def rebuild_file(packets: list, file_path: str):
-    log.info("[INFO] Paquete recibido: ", packets[0].get_data())
+    log.debug("Paquete recibido: %s", packets[0].get_data())
     dwld_file = open(file_path, "wb")
     for file_pkt in packets:
         dwld_file.write(file_pkt.get_data())

@@ -49,8 +49,8 @@ class Server:
         self.seq_nums_recv = SecNumberRegistry()
 
     def listen(self):
-        log.info(
-            f"[INFO] Server listo para recibir consultas, "
+        log.debug(
+            f" Server listo para recibir consultas, "
             f"usando {self.algorithm} como algoritmo"
         )
 
@@ -70,7 +70,7 @@ class Server:
             if client_address not in self.client_handlers:
                 client_queue = queue.Queue()
                 # Crear una nueva cola para este cliente
-                log.info("[INFO] Nuevo cliente: ", client_address)
+                log.info("Nuevo cliente: %s", client_address)
                 # Iniciar un nuevo hilo para manejar a este cliente
                 if self.algorithm == AlgorithmType.GBN:
 
@@ -99,13 +99,13 @@ class Server:
         log.debug("Utilizando GBN para cliente ", client_address)
         while True:
             packet = client_queue.get()
-            log.info(f"[INFO] Manejando el paquete: {packet}")
+            log.debug(f"Manejando el paquete: {packet}")
             if (
                 self.seq_nums_recv.get_last_ack(client_address)
                 != packet.get_seq_num() - 1
             ):
                 log.info(
-                    f"[INFO] El paquete {packet.get_seq_num()} "
+                    f"El paquete {packet.get_seq_num()} "
                     f"no es el esperado, "
                     f"enviando ack solicitando el proximo"
                 )
@@ -122,7 +122,7 @@ class Server:
                     Packet(packet.seq_num + 1, end_conection=True, ack=True),
                     window,
                 )
-                log.info("[INFO] Conexion con ", client_address, " finalizada")
+                log.info("Conexion con %s finalizada", client_address)
                 break
             self.process_packet_gbn(packet, client_address, window)
         window.close_window()
@@ -159,7 +159,7 @@ class Server:
                 client_address, Packet(packet.seq_num + 1, ack=True), window
             )
         else:
-            log.error("[ERROR] Query no reconocida")
+            log.error("Query no reconocida")
 
     def handle_client_sw(self, client_address, client_queue):
         # Esto se puede hacer en el hilo principal porque no se bloquea
@@ -169,7 +169,7 @@ class Server:
             )  # Bloquea hasta que hay un paquete en la cola
             if self.seq_nums_recv.has(client_address, packet.get_seq_num()):
                 log.info(
-                    f"[INFO] Paquete {packet.get_seq_num()} "
+                    f"Paquete {packet.get_seq_num()} "
                     f"ya fue recibido, descartando"
                 )
                 self.send_ack_sw(client_address)
@@ -177,7 +177,7 @@ class Server:
             self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
             if packet.get_fin():
                 self.send_ack_sw(client_address)
-                log.info("[INFO] Conexion con ", client_address, " finalizada")
+                log.info("Conexion con %s finalizada", client_address)
                 break
             self.process_packet_sw(packet, client_address)
 
@@ -203,11 +203,11 @@ class Server:
                 self.save_packet_in_file(packet, file_path)
             self.send_ack_sw(client_address)
         else:
-            log.error("[ERROR] Query no reconocida")
+            log.error("Query no reconocida")
 
     def send_ack_sw(self, client_address):
         last_ack = self.seq_nums_recv.get_last_ack(client_address)
-        log.debug("El ultimo ack enviado fue: ", last_ack)
+        log.debug("El ultimo ack enviado fue: %s", last_ack)
         ack_packet = Packet(last_ack + 1, ack=True)
         self.send_sw(client_address, ack_packet)
 

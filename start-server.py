@@ -5,8 +5,6 @@ import os
 
 from lib.server import Server, AlgorithmType
 
-# Por defecto
-verbose = True
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -22,9 +20,9 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    global verbose
     server_host = DEFAULT_HOST
     server_port = DEFAULT_PORT
+    verbose = True
     dir_path = os.path.dirname(__file__) + "/data/server_storage"
 
     parser = argparse.ArgumentParser(
@@ -77,11 +75,12 @@ def main():
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(
-            format="%(levelname)s: %(message)s", level=log.DEBUG
+            format="%(levelname)s: %(message)s", level="DEBUG"
         )
         log.info("Verbose output.")
     else:
-        logging.basicConfig(format="%(levelname)s: %(message)s")
+        logging.basicConfig(format="%(levelname)s: %(message)s", level="INFO")
+        verbose = False
     if args.quiet:
         verbose = False
     if args.host is not None:
@@ -95,7 +94,7 @@ def main():
             os.makedirs(dir_path)
     algorithm = AlgorithmType.SW if args.sw else AlgorithmType.GBN
 
-    log.debug("[DEBUG] args= ", [verbose, server_host, server_port, dir_path])
+    log.debug(" args= %s", [verbose, server_host, server_port, dir_path])
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((server_host, server_port))
     server = Server(server_socket, dir_path, algorithm)

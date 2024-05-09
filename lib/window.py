@@ -30,7 +30,6 @@ class Window:
 
     def restart_timer(self):
         # Cancela el temporizador anterior si existe
-        # log.debug("Reiniciando temporizador")
         if self.timer:
             self.timer.cancel()
         self.timer = threading.Timer(

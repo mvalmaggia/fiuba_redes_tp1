@@ -39,7 +39,6 @@ def send_stop_n_wait(
 def receive(server_socket) -> Tuple[Packet, str]:
     packet, sender_address = server_socket.recvfrom(4096)
     decoded_packet: Packet = pickle.loads(packet)
-    # log.debug(f"Paquete recibido: {decoded_packet}")
 
     # Validar que todos los atributos necesarios están presentes
     required_attributes = [
@@ -63,7 +62,7 @@ def receive(server_socket) -> Tuple[Packet, str]:
     # Chequeo de integridad de data recibida
     if calculated_checksum != decoded_packet.checksum:
         log.error(
-            "[ERROR] Checksum erroneo, data podria haber sido corrompida."
+            "Checksum erroneo, data podria haber sido corrompida."
         )
         raise ValueError("Checksum does not match, data may be corrupted.")
 
@@ -84,8 +83,6 @@ def send_file_sw(
     # bytes para enviarlos al cliente en paquetes
     with open(file_path, "rb") as file:
         file_content = file.read(2048)
-        # log.debug(f"Enviando paquete {sec_num} "
-        # f"con {len(file_content)} bytes")
         while file_content:
             data_packet = Packet(start_sec_num, False)
             data_packet.insert_data(file_content)

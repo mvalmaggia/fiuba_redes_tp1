@@ -47,7 +47,7 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
         send_stop_n_wait(
             sock, address, upload_query_packet, function_check_ack
         )
-        log.debug("received ack after request, starting upload...")
+        log.info("Subiendo archivo...")
         send_file_sw(sock, address, file_path, 2, function_check_ack)
     else:
         window = Window(
@@ -62,12 +62,12 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
         )
         thread_window_manager.start()
         send_gbn(sock, address, upload_query_packet, window)
-        log.debug("received ack after request, starting upload...")
+        log.info("Subiendo archivo...")
         send_file_gbn(sock, address, file_path, 2, window)
         window.close_window()
         thread_window_manager.join()
 
-    log.debug("upload finished")
+    log.info("Archivo subido exitosamente")
 
 
 def window_manager(window: Window, sock):
@@ -206,10 +206,10 @@ def main():
     udp_ip = args.host
     udp_port = args.port
     if args.verbose:
-        log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+        logging.basicConfig(format="%(levelname)s: %(message)s", level="DEBUG")
         log.debug("Verbose output.")
     else:
-        logging.basicConfig(format="%(levelname)s: %(message)s")
+        logging.basicConfig(format="%(levelname)s: %(message)s", level="INFO")
 
     algorithm = AlgorithmType.SW if args.sw else AlgorithmType.GBN
 
