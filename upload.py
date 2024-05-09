@@ -56,8 +56,11 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
 
 
 def window_manager(window: Window, sock):
-    # Si hay un nuevo ack, limpia los paquetes de la ventana y reinicio el temporizador
-    # Como corre en un nuevo hilo, se queda esperando a que llegue un ack
+    """
+    Si hay un nuevo ack, limpia los paquetes de la ventana y reinicio
+    el temporizador
+    Como corre en un nuevo hilo, se queda esperando a que llegue un ack
+    """
     while True:
         decoded_packet, _ = receive(sock)
         if decoded_packet.get_ack():

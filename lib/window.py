@@ -18,7 +18,8 @@ class Window:
             if len(self.packets) < self.size:
                 self.packets.append(packet)
                 print(
-                    f"Paquete {packet.seq_num} agregado, ventana largo: {len(self.packets)}"
+                    f"Paquete {packet.seq_num} agregado, "
+                    f"ventana largo: {len(self.packets)}"
                 )
                 self.restart_timer()
                 return True
@@ -45,9 +46,13 @@ class Window:
     def remove_confirmed(self, ack_num):
         # Elimina paquetes confirmados de la ventana
         with self.lock:
+            paquetes = [
+                self.packets[i].seq_num for i in range(len(self.packets))
+            ]
             print(
-                f"Se recibio el seq num {ack_num} y los paquetes en la ventana son: "
-                f"{[self.packets[i].seq_num for i in range(len(self.packets))]}"
+                f"Se recibio el seq num {ack_num} y los paquetes "
+                f"en la ventana son: "
+                f"{paquetes}"
             )
             self.packets = [
                 packet for packet in self.packets if packet.seq_num >= ack_num
@@ -61,7 +66,9 @@ class Window:
                 self.condition.notify_all()
 
     def close_window(self):
-        """Solo utilizar cuando se está seguro de que la ventana se va a vaciar."""
+        """
+        Solo utilizar cuando se está seguro de que la ventana se va a vaciar.
+        """
         with self.condition:
             self.condition.wait_for(lambda: not self.packets)
             print("La ventana ahora está vacía.")

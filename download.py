@@ -17,7 +17,8 @@ MAX_PACKET_SIZE = 1400  # MSS <= 1460
 # Formato linea de comando:
 # download [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]
 # -h:      (opcional) mostrar ayuda de uso
-# -v | -q: (opcional/ '-v' por defecto) definir cantidad dde informacion por consola
+# -v | -q: (opcional/ '-v' por defecto) definir cantidad
+# de informacion por consola
 # -H:      Direccion IP del servidor a conectarse
 # -p:      Puerto del servidor
 # -d:      Directorio a guardar el archivo bajado

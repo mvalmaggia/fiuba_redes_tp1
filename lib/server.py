@@ -43,7 +43,6 @@ class Server:
 
         while True:
             packet, client_address = receive(self.server_socket)
-            # print('[INFO] Paquete recibido: ', packet, ' de ', client_address)
             if client_address in self.client_handlers and packet.ack:
                 if self.algorithm == AlgorithmType.SW:
                     self.seq_nums_sent.set_ack(
@@ -91,7 +90,8 @@ class Server:
                 != packet.get_seq_num() - 1
             ):
                 print(
-                    f"[INFO] El paquete {packet.get_seq_num()} no es el esperado, "
+                    f"[INFO] El paquete {packet.get_seq_num()} "
+                    f"no es el esperado, "
                     f"enviando ack solicitando el proximo"
                 )
                 last_ack = self.seq_nums_recv.get_last_ack(client_address)
@@ -134,7 +134,8 @@ class Server:
         elif client_address in self._clients_pending_upload:
             last_seq_num = self.seq_nums_recv.get_last_ack(client_address)
             print(
-                f"Seq num recibido: {packet.get_seq_num()} y el ultimo seq num recibido es {last_seq_num}"
+                f"Seq num recibido: {packet.get_seq_num()} "
+                f"y el ultimo seq num recibido es {last_seq_num}"
             )
             if packet.get_seq_num() == last_seq_num:
                 file_path = self._clients_pending_upload[client_address]
@@ -153,7 +154,8 @@ class Server:
             )  # Bloquea hasta que hay un paquete en la cola
             if self.seq_nums_recv.has(client_address, packet.get_seq_num()):
                 print(
-                    f"[INFO] Paquete {packet.get_seq_num()} ya fue recibido, descartando"
+                    f"[INFO] Paquete {packet.get_seq_num()} "
+                    f"ya fue recibido, descartando"
                 )
                 self.send_ack_sw(client_address)
                 continue
@@ -204,8 +206,6 @@ class Server:
         for i in range(attempts):
             self.send_locking(client_address, packet)
             time.sleep(timeout)
-            # print(f'Esperando ack para paquete {packet.seq_num} y '
-            #       f'el ultimo ack es {self.seq_nums_sent.get_last_ack(client_address)}')
             if (
                 self.seq_nums_sent.get_last_ack(client_address)
                 > packet.seq_num
@@ -213,7 +213,8 @@ class Server:
                 print(f"Recibido ack para el paquete {packet.seq_num}")
                 return True
             print(
-                f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}"
+                f"Reintentando enviar paquete {packet.seq_num}, "
+                f"intento {i + 1}/{attempts}"
             )
         raise TimeoutError("No se recibio ack para el paquete")
 
@@ -226,10 +227,12 @@ class Server:
         attempts=50,
     ):
         print(f"Enviando archivo {file_path}")
-        # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
+        # Primero se abre el archivo y se va leyendo de a pedazos de 1024
+        # bytes para enviarlos al cliente en paquetes
         with open(file_path, "rb") as file:
             file_content = file.read(2048)
-            # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
+            # print(f"Enviando paquete {sec_num} con
+            # {len(file_content)} bytes")
             while file_content:
                 data_packet = Packet(start_sec_num, False)
                 data_packet.insert_data(file_content)
@@ -252,21 +255,25 @@ class Server:
                 break
             else:
                 print(
-                    f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}"
+                    f"Ventana llena, esperando para enviar "
+                    f"paquete {packet.seq_num} "
+                    f"a {client_address}"
                 )
-                # TODO: Implementar un mecanismo de espera más eficiente (eventos)
-                time.sleep(
-                    0.5
-                )  # Espera activa, considerar usar un mecanismo de espera más eficiente
+                # TODO: Implementar un mecanismo
+                # de espera más eficiente (eventos)
+                time.sleep(0.5)
+                # Espera activa
 
     def send_file_gbn(
         self, client_address, file_path, start_sec_num, window: Window
     ):
         print(f"Enviando archivo {file_path}")
-        # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes para enviarlos al cliente en paquetes
+        # Primero se abre el archivo y se va leyendo de a pedazos
+        # de 1024 bytes para enviarlos al cliente en paquetes
         with open(file_path, "rb") as file:
             file_content = file.read(2048)
-            # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
+            # print(f"Enviando paquete {sec_num} "
+            # f"con {len(file_content)} bytes")
             while file_content:
                 data_packet = Packet(start_sec_num, False)
                 data_packet.insert_data(file_content)

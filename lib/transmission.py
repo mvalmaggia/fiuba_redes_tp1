@@ -26,7 +26,8 @@ def send_stop_n_wait(
             print(f"Recibido ack para el paquete {packet.seq_num}")
             return True
         print(
-            f"Reintentando enviar paquete {packet.seq_num}, intento {i + 1}/{attempts}"
+            f"Reintentando enviar paquete {packet.seq_num}, "
+            f"intento {i + 1}/{attempts}"
         )
     raise TimeoutError("No se recibio ack para el paquete")
 
