@@ -1,4 +1,4 @@
-from logging import log
+import logging
 from socket import AF_INET, SOCK_DGRAM, socket
 import argparse
 import os
@@ -11,7 +11,7 @@ verbose = True
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 
-
+log = logging.getLogger(__name__)
 # Formato linea de comando:
 # start-server [-h] [-v | -q] [-H ADDR] [-p PORT] [-s DIRPATH]
 # -h:      mostrar ayuda de uso
@@ -76,10 +76,12 @@ def main():
 
     args = parser.parse_args()
     if args.verbose:
-        log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+        logging.basicConfig(
+            format="%(levelname)s: %(message)s", level=log.DEBUG
+        )
         log.info("Verbose output.")
     else:
-        log.basicConfig(format="%(levelname)s: %(message)s")
+        logging.basicConfig(format="%(levelname)s: %(message)s")
     if args.quiet:
         verbose = False
     if args.host is not None:
