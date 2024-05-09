@@ -17,7 +17,7 @@ python start-server.py -v
 Ese comando por defecto utilizará como repositorio de almacenamiento el directorio `data/server_storage`.
 Dicha carpeta se puede cambiar utilizando el parametro `-s` PATH.  
 Asi mismo, como lo indicaba la consigna, se pueden utilizar los parametros `-H` y `-p` para cambiar el host y el puerto respectivamente.  
-Algo muy **importante** es elegir el algoritmo de retransmisión se puede utilizar el parámetro `-g` para usar Go-Back-N o `-w` para usar Stop and Wait, por defecto se utiliza Go-Back-N.
+Algo muy **importante** es elegir el algoritmo de retransmisión se puede utilizar el parámetro `-g` para usar Go-Back-N o `-w` para usar Stop and Wait, por defecto se utiliza Go-Back-N, siempre con ventana de 10 paquetes.
 
 Para más detalle se puede ejecutar el siguiente comando
 ```bash
