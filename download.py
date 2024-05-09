@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 import argparse
@@ -12,6 +13,8 @@ verbose = True
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 MAX_PACKET_SIZE = 1400  # MSS <= 1460
+
+log = logging.getLogger(__name__)
 
 
 # Formato linea de comando:
@@ -58,10 +61,13 @@ def main():
     parser.add_argument(
         "-n", "--file_name", help="file name", required=True, type=str
     )
-    print("Se va a ejecutar el parser")
 
     args = parser.parse_args()
-
+    if args.verbose:
+        log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+        log.debug("Verbose output.")
+    else:
+        log.basicConfig(format="%(levelname)s: %(message)s")
     if args.quiet:
         verbose = False
     if args.host is not None:
@@ -72,7 +78,7 @@ def main():
         file_path = args.dst
     file_name = args.file_name
 
-    print("[DEBUG] args= ", [verbose, server_host, server_port, file_path])
+    log.debug("[DEBUG] args= ", [verbose, server_host, server_port, file_path])
 
     rcv_file(server_host, server_port, file_path, file_name)
 
@@ -92,8 +98,8 @@ def rcv_file(
     def function_check_ack(sec_num_to_check):
         return check_ack_client(client_socket, sec_num_to_check)
 
-    print("[DEBUG] file_path = ", file_path)
-    print("[DEBUG] file_name = ", file_name)
+    log.debug("[DEBUG] file_path = ", file_path)
+    log.debug("[DEBUG] file_name = ", file_name)
     # Query
     query_packet = Packet(
         seq_num_client, False, QueryType.DOWNLOAD, file_name=file_name
@@ -103,13 +109,13 @@ def rcv_file(
     )
     while True:
         decoded_packet, _ = receive(client_socket)
-        print(f"[DEBUG] Paquete recibido: {decoded_packet}")
-        # print('[DEBUG] Paquete recibido: ')
-        # print('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
-        # print('[DEBUG]   ack: ', decoded_packet.get_ack())
-        # print('[DEBUG]   fin: ', decoded_packet.get_fin())
-        # print('[DEBUG]   data: ', decoded_packet.get_data())
-        print(f"[DEBUG] Paquetes al momento: {packets.keys()}")
+        log.debug(f"[DEBUG] Paquete recibido: {decoded_packet}")
+        # log.debug('[DEBUG] Paquete recibido: ')
+        # log.debug('[DEBUG]   seq_num: ', decoded_packet.get_seq_num())
+        # log.debug('[DEBUG]   ack: ', decoded_packet.get_ack())
+        # log.debug('[DEBUG]   fin: ', decoded_packet.get_fin())
+        # log.debug('[DEBUG]   data: ', decoded_packet.get_data())
+        log.debug(f"[DEBUG] Paquetes al momento: {packets.keys()}")
         if decoded_packet.get_seq_num() != seq_num_expected:
             ack_packet = Packet(seq_num_expected, ack=True)
             send_stop_n_wait(
@@ -143,7 +149,7 @@ def rcv_file(
 
 
 def rebuild_file(packets: list, file_path: str):
-    print("[INFO] Paquete recibido: ", packets[0].get_data())
+    log.info("[INFO] Paquete recibido: ", packets[0].get_data())
     dwld_file = open(file_path, "wb")
     for file_pkt in packets:
         dwld_file.write(file_pkt.get_data())

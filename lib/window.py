@@ -1,4 +1,7 @@
+import logging
 import threading
+
+log = logging.getLogger(__name__)
 
 
 class Window:
@@ -17,7 +20,7 @@ class Window:
         with self.lock:
             if len(self.packets) < self.size:
                 self.packets.append(packet)
-                print(
+                log.debug(
                     f"Paquete {packet.seq_num} agregado, "
                     f"ventana largo: {len(self.packets)}"
                 )
@@ -27,7 +30,7 @@ class Window:
 
     def restart_timer(self):
         # Cancela el temporizador anterior si existe
-        # print("Reiniciando temporizador")
+        # log.debug("Reiniciando temporizador")
         if self.timer:
             self.timer.cancel()
         self.timer = threading.Timer(
@@ -38,7 +41,7 @@ class Window:
     def retransmit_unacknowledged_packets(self):
         # Suponiendo que retransmite todos los paquetes no confirmados
         for packet in self.packets:
-            print(f"Retransmitiendo paquete {packet.seq_num}")
+            log.debug(f"Retransmitiendo paquete {packet.seq_num}")
             self.send_function(self.client_address, packet)
 
         self.restart_timer()
@@ -49,7 +52,7 @@ class Window:
             paquetes = [
                 self.packets[i].seq_num for i in range(len(self.packets))
             ]
-            print(
+            log.debug(
                 f"Se recibio el seq num {ack_num} y los paquetes "
                 f"en la ventana son: "
                 f"{paquetes}"
@@ -60,9 +63,8 @@ class Window:
             paquetes = [
                 self.packets[i].seq_num for i in range(len(self.packets))
             ]
-            print(
-                f"Paquetes en la ventana después de remover: "
-                f"{paquetes}"
+            log.debug(
+                f"Paquetes en la ventana después de remover: " f"{paquetes}"
             )
             if not self.packets:
                 # Notifica a los hilos esperando que la ventana está vacía
@@ -74,11 +76,11 @@ class Window:
         """
         with self.condition:
             self.condition.wait_for(lambda: not self.packets)
-            print("La ventana ahora está vacía.")
+            log.debug("La ventana ahora está vacía.")
         if self.timer:
             self.timer.cancel()
             self.timer.join()
-            print("Temporizador detenido")
+            log.debug("Temporizador detenido")
 
     def wait_for_empty_window(self, timeout=None):
         with self.condition:

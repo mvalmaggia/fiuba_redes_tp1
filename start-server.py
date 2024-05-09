@@ -1,3 +1,4 @@
+from logging import log
 from socket import AF_INET, SOCK_DGRAM, socket
 import argparse
 import os
@@ -74,7 +75,11 @@ def main():
     )
 
     args = parser.parse_args()
-
+    if args.verbose:
+        log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+        log.info("Verbose output.")
+    else:
+        log.basicConfig(format="%(levelname)s: %(message)s")
     if args.quiet:
         verbose = False
     if args.host is not None:
@@ -88,7 +93,7 @@ def main():
             os.makedirs(dir_path)
     algorithm = AlgorithmType.SW if args.sw else AlgorithmType.GBN
 
-    print("[DEBUG] args= ", [verbose, server_host, server_port, dir_path])
+    log.debug("[DEBUG] args= ", [verbose, server_host, server_port, dir_path])
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((server_host, server_port))
     server = Server(server_socket, dir_path, algorithm)

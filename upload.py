@@ -46,7 +46,7 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
         send_stop_n_wait(
             sock, address, upload_query_packet, function_check_ack
         )
-        print("received ack after request, starting upload...")
+        log.debug("received ack after request, starting upload...")
         send_file_sw(sock, address, file_path, 2, function_check_ack)
     else:
         window = Window(
@@ -61,12 +61,12 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
         )
         thread_window_manager.start()
         send_gbn(sock, address, upload_query_packet, window)
-        print("received ack after request, starting upload...")
+        log.debug("received ack after request, starting upload...")
         send_file_gbn(sock, address, file_path, 2, window)
         window.close_window()
         thread_window_manager.join()
 
-    print("upload finished")
+    log.debug("upload finished")
 
 
 def window_manager(window: Window, sock):
@@ -78,10 +78,10 @@ def window_manager(window: Window, sock):
     while True:
         decoded_packet, _ = receive(sock)
         if decoded_packet.get_ack():
-            print(f"Se recibio el paquete: {decoded_packet}")
+            log.debug(f"Se recibio el paquete: {decoded_packet}")
             window.remove_confirmed(decoded_packet.seq_num)
         if decoded_packet.get_fin():
-            print("Fin de la transmision")
+            log.debug("Fin de la transmision")
             break
     window.close_window()
 
@@ -89,12 +89,13 @@ def window_manager(window: Window, sock):
 def send_file_gbn(
     sock, client_address, file_path, start_sec_num, window: Window
 ):
-    print(f"Enviando archivo {file_path}")
+    log.debug(f"Enviando archivo {file_path}")
     # Primero se abre el archivo y se va leyendo de a pedazos de 1024 bytes
     # para enviarlos al cliente en paquetes
     with open(file_path, "rb") as file:
         file_content = file.read(2048)
-        # print(f"Enviando paquete {sec_num} con {len(file_content)} bytes")
+        # log.debug(f"Enviando paquete {sec_num} "
+        # f"con {len(file_content)} bytes")
         while file_content:
             data_packet = Packet(start_sec_num, False)
             data_packet.insert_data(file_content)
@@ -112,10 +113,10 @@ def send_gbn(sock, client_address, packet, window):
     while True:
         if packet.ack or window.try_add_packet(packet):
             sock.sendto(pickle.dumps(packet), client_address)
-            print(f"Enviando paquete {packet.seq_num} a {client_address}")
+            log.debug(f"Enviando paquete {packet.seq_num} a {client_address}")
             break
         else:
-            print(
+            log.debug(
                 f"Ventana llena, esperando para enviar "
                 f"paquete {packet.seq_num} "
                 f"a {client_address}"
@@ -125,7 +126,7 @@ def send_gbn(sock, client_address, packet, window):
 
 def send_straightforward(sock, client_address, packet):
     sock.sendto(pickle.dumps(packet), client_address)
-    # print(f"Enviando paquete {packet.seq_num} a {client_address}")
+    # log.debug(f"Enviando paquete {packet.seq_num} a {client_address}")
 
 
 def check_ack_client(sock, seq_num):
@@ -205,7 +206,7 @@ def main():
     udp_port = args.port
     if args.verbose:
         log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
-        log.info("Verbose output.")
+        log.debug("Verbose output.")
     else:
         log.basicConfig(format="%(levelname)s: %(message)s")
 

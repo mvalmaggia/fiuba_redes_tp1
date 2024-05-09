@@ -1,3 +1,5 @@
+import logging
+
 import pickle
 import queue
 import time
@@ -8,6 +10,8 @@ from lib.packet import Packet
 from lib.sec_num_registry import SecNumberRegistry
 from lib.transmission import receive
 from lib.window import Window
+
+log = logging.getLogger(__name__)
 
 
 class AlgorithmType(Enum):
@@ -45,7 +49,7 @@ class Server:
         self.seq_nums_recv = SecNumberRegistry()
 
     def listen(self):
-        print(
+        log.info(
             f"[INFO] Server listo para recibir consultas, "
             f"usando {self.algorithm} como algoritmo"
         )
@@ -66,7 +70,7 @@ class Server:
             if client_address not in self.client_handlers:
                 client_queue = queue.Queue()
                 # Crear una nueva cola para este cliente
-                print("[INFO] Nuevo cliente: ", client_address)
+                log.info("[INFO] Nuevo cliente: ", client_address)
                 # Iniciar un nuevo hilo para manejar a este cliente
                 if self.algorithm == AlgorithmType.GBN:
 
@@ -92,15 +96,15 @@ class Server:
             self.client_handlers[client_address].client_queue.put(packet)
 
     def handle_client_gbn(self, client_address, client_queue, window: Window):
-        print("Utilizando GBN para cliente ", client_address)
+        log.debug("Utilizando GBN para cliente ", client_address)
         while True:
             packet = client_queue.get()
-            print(f"[INFO] Manejando el paquete: {packet}")
+            log.info(f"[INFO] Manejando el paquete: {packet}")
             if (
                 self.seq_nums_recv.get_last_ack(client_address)
                 != packet.get_seq_num() - 1
             ):
-                print(
+                log.info(
                     f"[INFO] El paquete {packet.get_seq_num()} "
                     f"no es el esperado, "
                     f"enviando ack solicitando el proximo"
@@ -118,7 +122,7 @@ class Server:
                     Packet(packet.seq_num + 1, end_conection=True, ack=True),
                     window,
                 )
-                print("[INFO] Conexion con ", client_address, " finalizada")
+                log.info("[INFO] Conexion con ", client_address, " finalizada")
                 break
             self.process_packet_gbn(packet, client_address, window)
         window.close_window()
@@ -144,7 +148,7 @@ class Server:
             )
         elif client_address in self._clients_pending_upload:
             last_seq_num = self.seq_nums_recv.get_last_ack(client_address)
-            print(
+            log.debug(
                 f"Seq num recibido: {packet.get_seq_num()} "
                 f"y el ultimo seq num recibido es {last_seq_num}"
             )
@@ -155,7 +159,7 @@ class Server:
                 client_address, Packet(packet.seq_num + 1, ack=True), window
             )
         else:
-            print("[ERROR] Query no reconocida")
+            log.error("[ERROR] Query no reconocida")
 
     def handle_client_sw(self, client_address, client_queue):
         # Esto se puede hacer en el hilo principal porque no se bloquea
@@ -164,7 +168,7 @@ class Server:
                 client_queue.get()
             )  # Bloquea hasta que hay un paquete en la cola
             if self.seq_nums_recv.has(client_address, packet.get_seq_num()):
-                print(
+                log.info(
                     f"[INFO] Paquete {packet.get_seq_num()} "
                     f"ya fue recibido, descartando"
                 )
@@ -173,7 +177,7 @@ class Server:
             self.seq_nums_recv.set_ack(client_address, packet.get_seq_num())
             if packet.get_fin():
                 self.send_ack_sw(client_address)
-                print("[INFO] Conexion con ", client_address, " finalizada")
+                log.info("[INFO] Conexion con ", client_address, " finalizada")
                 break
             self.process_packet_sw(packet, client_address)
 
@@ -199,18 +203,18 @@ class Server:
                 self.save_packet_in_file(packet, file_path)
             self.send_ack_sw(client_address)
         else:
-            print("[ERROR] Query no reconocida")
+            log.error("[ERROR] Query no reconocida")
 
     def send_ack_sw(self, client_address):
         last_ack = self.seq_nums_recv.get_last_ack(client_address)
-        print("El ultimo ack enviado fue: ", last_ack)
+        log.debug("El ultimo ack enviado fue: ", last_ack)
         ack_packet = Packet(last_ack + 1, ack=True)
         self.send_sw(client_address, ack_packet)
 
     def send_sw(
         self, client_address, packet: Packet, timeout=0.1, attempts=50
     ):
-        print(f"Enviando paquete {packet}")
+        log.debug(f"Enviando paquete {packet}")
         if packet.ack:
             self.send_locking(client_address, packet)
             return True
@@ -221,9 +225,9 @@ class Server:
                 self.seq_nums_sent.get_last_ack(client_address)
                 > packet.seq_num
             ):
-                print(f"Recibido ack para el paquete {packet.seq_num}")
+                log.debug(f"Recibido ack para el paquete {packet.seq_num}")
                 return True
-            print(
+            log.debug(
                 f"Reintentando enviar paquete {packet.seq_num}, "
                 f"intento {i + 1}/{attempts}"
             )
@@ -237,12 +241,12 @@ class Server:
         timeout=0.1,
         attempts=50,
     ):
-        print(f"Enviando archivo {file_path}")
+        log.debug(f"Enviando archivo {file_path}")
         # Primero se abre el archivo y se va leyendo de a pedazos de 1024
         # bytes para enviarlos al cliente en paquetes
         with open(file_path, "rb") as file:
             file_content = file.read(2048)
-            # print(f"Enviando paquete {sec_num} con
+            # log.debug(f"Enviando paquete {sec_num} con
             # {len(file_content)} bytes")
             while file_content:
                 data_packet = Packet(start_sec_num, False)
@@ -262,10 +266,10 @@ class Server:
         while True:
             if packet.ack or window.try_add_packet(packet):
                 self.send_locking(client_address, packet)
-                print(f"Enviando paquete {packet}")
+                log.debug(f"Enviando paquete {packet}")
                 break
             else:
-                print(
+                log.debug(
                     f"Ventana llena, esperando para enviar "
                     f"paquete {packet.seq_num} "
                     f"a {client_address}"
@@ -278,12 +282,12 @@ class Server:
     def send_file_gbn(
         self, client_address, file_path, start_sec_num, window: Window
     ):
-        print(f"Enviando archivo {file_path}")
+        log.debug(f"Enviando archivo {file_path}")
         # Primero se abre el archivo y se va leyendo de a pedazos
         # de 1024 bytes para enviarlos al cliente en paquetes
         with open(file_path, "rb") as file:
             file_content = file.read(2048)
-            # print(f"Enviando paquete {sec_num} "
+            # log.debug(f"Enviando paquete {sec_num} "
             # f"con {len(file_content)} bytes")
             while file_content:
                 data_packet = Packet(start_sec_num, False)
