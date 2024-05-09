@@ -274,10 +274,10 @@ class Server:
                     f"paquete {packet.seq_num} "
                     f"a {client_address}"
                 )
-                # TODO: Implementar un mecanismo
-                # de espera más eficiente (eventos)
-                time.sleep(0.5)
                 # Espera activa
+                print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} a {client_address}")
+                # TODO: Implementar un mecanismo de espera más eficiente (eventos)
+                time.sleep(0.1)  # Espera activa, considerar usar un mecanismo de espera más eficiente
 
     def send_file_gbn(
         self, client_address, file_path, start_sec_num, window: Window

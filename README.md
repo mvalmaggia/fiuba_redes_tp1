@@ -26,8 +26,7 @@ Para subir archivos al servidor se debe ejecutar el siguiente comando:
 python upload.py -s FILE_PATH
 ```
 También se le puede agregar el parametro -n FILE_NAME para indicarle el nombre con el que se guardará el archivo en el servidor.
-El algoritmo se puede elegir con el parametro -g para Go-Back-N o -w para Stop and Wait. Debe ser el mismo que el del servidor.
-Para más detalle se puede ejecutar el siguiente comando
+El algoritmo se puede elegir con el parametro -g para Go-Back-N o -w para Stop and Wait. Si se utiliza Stop and Wait el servidor también deberá utilizar este algoritmo.
 ```bash
 python upload.py -h
 ```
