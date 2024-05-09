@@ -23,7 +23,7 @@ class ClientContext:
 
 
 class Server:
-    def __init__(self, server_socket, dir_path, algorithm=AlgorithmType.SW):
+    def __init__(self, server_socket, dir_path, algorithm):
         # Aqui se guarda el registro del ultimo numero de secuencia enviado a cada cliente
         # Necesita ser thread-safe porque no puede despues de escribir parar a leer, sino que con esto
         # Se puede despachar el ack, registrarlo y luego hacer polling para ver si se recibio el ack
@@ -37,7 +37,7 @@ class Server:
         self.seq_nums_recv = SecNumberRegistry()
 
     def listen(self):
-        print('[INFO] Server listo para recibir consultas')
+        print(f'[INFO] Server listo para recibir consultas, usando {self.algorithm} como algoritmo')
 
         while True:
             packet, client_address = receive(self.server_socket)
@@ -58,7 +58,7 @@ class Server:
                 # Iniciar un nuevo hilo para manejar a este cliente
                 if self.algorithm == AlgorithmType.GBN:
 
-                    window = Window(4, client_address, self.send_locking)
+                    window = Window(10, client_address, self.send_locking)
                     self.client_handlers[client_address] = ClientContext(client_address,
                                                                          client_queue,
                                                                          window)

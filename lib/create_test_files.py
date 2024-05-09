@@ -15,7 +15,7 @@ def create_large_text_file(file_path, size_in_kb):
 if __name__ == "__main__":
     # Default values
     file_path = "large_file.txt"
-    size_in_kb = 2048
+    size_in_kb = 5000
 
     # Command line arguments
     if len(sys.argv) > 1:

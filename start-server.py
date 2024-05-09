@@ -2,7 +2,7 @@ from socket import AF_INET, SOCK_DGRAM, socket
 import argparse
 import os
 
-from lib.server import Server
+from lib.server import Server, AlgorithmType
 
 # Por defecto
 verbose = True
@@ -44,6 +44,11 @@ def main():
     parser.add_argument("-s", "--storage", help="server_storage dir path",
                         default=dir_path,
                         required=False, type=str)
+    group_algorithm = parser.add_mutually_exclusive_group()
+    group_algorithm.add_argument("-g", "--gbn", help="Server use Go Back N algorithm",
+                                 required=False, action="store_true")
+    group_algorithm.add_argument("-w", "--sw", help="Server use Stop and Wait algorithm",
+                                 required=False, action="store_true")
 
     args = parser.parse_args()
 
@@ -58,11 +63,12 @@ def main():
         # Si dir_path especificado por argumento no existe, lo crea
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
+    algorithm = AlgorithmType.SW if args.sw else AlgorithmType.GBN
 
     print("[DEBUG] args= ", [verbose, server_host, server_port, dir_path])
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((server_host, server_port))
-    server = Server(server_socket, dir_path)
+    server = Server(server_socket, dir_path, algorithm)
     server.listen()
 
 

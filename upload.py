@@ -24,10 +24,7 @@ from lib.window import Window
 # -n, --name file name
 
 PACKET_SIZE = 1024
-TIMEOUT = 5
-
-
-def upload(udp_ip, udp_port, file_path, file_name, algorithm=AlgorithmType.GBN):
+def upload(udp_ip, udp_port, file_path, file_name, algorithm):
     if not os.path.isabs(file_path):
         current_directory = os.path.dirname(os.path.realpath(__file__))
         file_path = os.path.join(current_directory, file_path)
@@ -42,7 +39,7 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm=AlgorithmType.GBN):
         print("received ack after request, starting upload...")
         send_file_sw(sock, address, file_path, 2, function_check_ack)
     else:
-        window = Window(4, address,
+        window = Window(10, address,
                         lambda client_address, packet: send_straightforward(sock, client_address, packet))
         thread_window_manager = threading.Thread(target=window_manager, args=(window, sock))
         thread_window_manager.start()
@@ -98,9 +95,7 @@ def send_gbn(sock, client_address, packet, window):
         else:
             print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} "
                   f"a {client_address}")
-            # TODO: Implementar un mecanismo de espera más eficiente (eventos)
-            # Espera activa, considerar usar un mecanismo de espera más eficiente
-            time.sleep(0.5)
+            time.sleep(0.1)
 
 
 def send_straightforward(sock, client_address, packet):
@@ -133,12 +128,19 @@ def main():
     parser.add_argument('-p', '--port', help="server port", default=8000)
 
     parser.add_argument('-s', '--src', metavar="FILEPATH", help="source file path",
+                        required=True,
                         default=os.path.dirname(__file__) + '/data/uploads/test.txt')
 
     # file name es el nombre con el cual se va a guardar el archivo en el
     # server_storage
     parser.add_argument('-n', '--name', metavar="FILENAME", help="file name",
-                        default="upload_test.txt")
+                        default="file_test.txt")
+
+    group_algorithm = parser.add_mutually_exclusive_group()
+    group_algorithm.add_argument("-g", "--gbn", help="Server use Go Back N algorithm",
+                                 required=False, action="store_true")
+    group_algorithm.add_argument("-w", "--sw", help="Server use Stop and Wait algorithm",
+                                 required=False, action="store_true")
 
     args = parser.parse_args()
 
@@ -150,7 +152,9 @@ def main():
     else:
         log.basicConfig(format="%(levelname)s: %(message)s")
 
-    upload(udp_ip, udp_port, args.src, args.name, algorithm=AlgorithmType.SW)
+    algorithm = AlgorithmType.SW if args.sw else AlgorithmType.GBN
+
+    upload(udp_ip, udp_port, args.src, args.name, algorithm)
 
 
 if __name__ == "__main__":
