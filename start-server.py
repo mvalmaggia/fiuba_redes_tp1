@@ -43,18 +43,35 @@ def main():
     )
 
     # Especificaciones de conexion/guardado de archivo
-    parser.add_argument("-H", "--host", help="service IP address",
-                        required=False, type=str)
-    parser.add_argument("-p", "--port", help="service port number",
-                        required=False, type=int)
-    parser.add_argument("-s", "--storage", help="server_storage dir path",
-                        default=dir_path,
-                        required=False, type=str)
+    parser.add_argument(
+        "-H", "--host", help="service IP address", required=False, type=str
+    )
+    parser.add_argument(
+        "-p", "--port", help="service port number", required=False, type=int
+    )
+    parser.add_argument(
+        "-s",
+        "--storage",
+        help="server_storage dir path",
+        default=dir_path,
+        required=False,
+        type=str,
+    )
     group_algorithm = parser.add_mutually_exclusive_group()
-    group_algorithm.add_argument("-g", "--gbn", help="Server use Go Back N algorithm",
-                                 required=False, action="store_true")
-    group_algorithm.add_argument("-w", "--sw", help="Server use Stop and Wait algorithm",
-                                 required=False, action="store_true")
+    group_algorithm.add_argument(
+        "-g",
+        "--gbn",
+        help="Server use Go Back N algorithm",
+        required=False,
+        action="store_true",
+    )
+    group_algorithm.add_argument(
+        "-w",
+        "--sw",
+        help="Server use Stop and Wait algorithm",
+        required=False,
+        action="store_true",
+    )
 
     args = parser.parse_args()
 

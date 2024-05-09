@@ -65,8 +65,15 @@ def receive(server_socket) -> Tuple[Packet, str]:
     return decoded_packet, sender_address
 
 
-def send_file_sw(server_socket, client_address, file_path, start_sec_num,
-                 check_ack, timeout=0.1, attempts=50):
+def send_file_sw(
+    server_socket,
+    client_address,
+    file_path,
+    start_sec_num,
+    check_ack,
+    timeout=0.1,
+    attempts=50,
+):
     print(f"Enviando archivo {file_path}")
     # Primero se abre el archivo y se va leyendo de a pedazos de 1024
     # bytes para enviarlos al cliente en paquetes

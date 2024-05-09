@@ -24,6 +24,8 @@ from lib.window import Window
 # -n, --name file name
 
 PACKET_SIZE = 1024
+
+
 def upload(udp_ip, udp_port, file_path, file_name, algorithm):
     if not os.path.isabs(file_path):
         current_directory = os.path.dirname(os.path.realpath(__file__))
@@ -47,9 +49,16 @@ def upload(udp_ip, udp_port, file_path, file_name, algorithm):
         print("received ack after request, starting upload...")
         send_file_sw(sock, address, file_path, 2, function_check_ack)
     else:
-        window = Window(10, address,
-                        lambda client_address, packet: send_straightforward(sock, client_address, packet))
-        thread_window_manager = threading.Thread(target=window_manager, args=(window, sock))
+        window = Window(
+            10,
+            address,
+            lambda client_address, packet: send_straightforward(
+                sock, client_address, packet
+            ),
+        )
+        thread_window_manager = threading.Thread(
+            target=window_manager, args=(window, sock)
+        )
         thread_window_manager.start()
         send_gbn(sock, address, upload_query_packet, window)
         print("received ack after request, starting upload...")
@@ -106,8 +115,11 @@ def send_gbn(sock, client_address, packet, window):
             print(f"Enviando paquete {packet.seq_num} a {client_address}")
             break
         else:
-            print(f"Ventana llena, esperando para enviar paquete {packet.seq_num} "
-                  f"a {client_address}")
+            print(
+                f"Ventana llena, esperando para enviar "
+                f"paquete {packet.seq_num} "
+                f"a {client_address}"
+            )
             time.sleep(0.1)
 
 
@@ -163,14 +175,29 @@ def main():
 
     # file name es el nombre con el cual se va a guardar el archivo en el
     # server_storage
-    parser.add_argument('-n', '--name', metavar="FILENAME", help="file name",
-                        default="file_test.txt")
+    parser.add_argument(
+        "-n",
+        "--name",
+        metavar="FILENAME",
+        help="file name",
+        default="file_test.txt",
+    )
 
     group_algorithm = parser.add_mutually_exclusive_group()
-    group_algorithm.add_argument("-g", "--gbn", help="Server use Go Back N algorithm",
-                                 required=False, action="store_true")
-    group_algorithm.add_argument("-w", "--sw", help="Server use Stop and Wait algorithm",
-                                 required=False, action="store_true")
+    group_algorithm.add_argument(
+        "-g",
+        "--gbn",
+        help="Server use Go Back N algorithm",
+        required=False,
+        action="store_true",
+    )
+    group_algorithm.add_argument(
+        "-w",
+        "--sw",
+        help="Server use Stop and Wait algorithm",
+        required=False,
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
