@@ -1,0 +1,31 @@
+# 1. Inicio el comcast con perdida de 10%
+comcast --device=lo0 --target-addr=127.0.0.1 --target-port=8000 --packet-loss=10%
+
+# 2. Inicio el servidor para probar en gbn
+python start-server.py -g -v
+
+# 3. Pruebo la subida de 1mb y la bajada de 5mb, todo en gbn. En otras 2 consolas cliente.
+python upload.py -s data/uploads/1000kb.txt -n 1000kb_server.txt -g -v
+
+python download.py -n 5000kb_server.txt -d data/downloads/5000kb_downloaded.txt -v
+
+# 4. Mientras vayan finalizando puedo comprobar si los archivos se subieron y bajaron correctamente
+# Upload
+cmp data/uploads/1000kb.txt data/server_storage/1000kb_server.txt
+# Download
+cmp data/server_storage/5000kb_server.txt data/downloads/5000kb_downloaded.txt
+
+## Ahora con stop-and-wait. Corto todo y vuelvo a empezar. Tengo que eliminar los archivos asi empiezo de vuelta.
+# 1. Inicio el servidor
+python start-server.py -w -v
+
+# 2. Pruebo la subida de 1mb y la bajada de 5mb, todo en stop-and-wait. En otras 2 consolas cliente.
+python upload.py -s data/uploads/1000kb.txt -n 1000kb_server.txt -w -v
+
+python download.py -n 5000kb_server.txt -d data/downloads/5000kb_downloaded.txt -v
+# 3. Mientras vayan finalizando puedo comprobar si los archivos se subieron y bajaron correctamente
+cmp data/uploads/1000kb.txt data/server_storage/1000kb_server.txt
+# Download
+cmp data/server_storage/5000kb_server.txt data/downloads/5000kb_downloaded.txt
+
+
